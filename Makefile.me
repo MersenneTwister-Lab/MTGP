@@ -1,0 +1,55 @@
+#for GNU make
+
+FILES = LICENSE.txt \
+	CHANGE-LOG.txt \
+	README.jp.txt \
+	README.txt \
+	doxygen.cfg \
+	mainpage.txt \
+	mtgp64-ref.h \
+	mtgp64-ref.c \
+	mtgp64-fast.h \
+	mtgp64-fast.c \
+	mtgp64-cuda.cu \
+	mtgp64-param-ref.c \
+	mtgp64-param-fast.c \
+	mtgp32-ref.h \
+	mtgp32-ref.c \
+	mtgp32-fast.h \
+	mtgp32-fast.c \
+	mtgp32-cuda.cu \
+	mtgp32-param-ref.c \
+	mtgp32-param-fast.c \
+	Makefile \
+	tools/test32.c \
+	tools/test64.c \
+	tools/bigcrush.c \
+	tools/check-poly.cpp \
+	tools/check-poly32.sh \
+	tools/check-poly64.sh \
+	tools/zero-count.c \
+	tools/Makefile \
+	html
+VERSION = 1.0
+DIR = mtgp-src-${VERSION}
+
+doc:
+	rm -rf html
+	doxygen doxygen.cfg
+
+.PHONY : tar.gz
+tar.gz: $(FILES)
+	mkdir ${DIR}
+	cp -r ${FILES} ${DIR}
+	tar czvf ${DIR}.tar.gz ${DIR}/*
+	rm -rf ${DIR}
+
+.PHONY : zip
+zip: $(FILES)
+	mkdir ${DIR}
+	cp -r ${FILES} ${DIR}
+	zip ${DIR}.zip ${DIR}/* ${DIR}/html/* ${DIR}/tools/*
+	rm -rf ${DIR}
+
+clean:
+	rm -f *.o *~
