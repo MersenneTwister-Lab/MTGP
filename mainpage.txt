@@ -8,41 +8,23 @@
  * This program is based on the IEEE Standard for Binary
  * Floating-Point Arithmetic (ANSI/IEEE Std 754-2008) format.
  *
- * This Project provides pseudorandom number generators of some
+ * This Project provides 64-bit pseudorandom number generators of some
  * Mersenne Prime Period: 2<sup>23209</sup>-1,
  * 2<sup>44497</sup>-1 and 2<sup>110503</sup>-1.
  *
- * - void mtgp64_init() initializes the generator with a 64-bit integer
- *   seed.
- * - void mtgp64_init_by_array() initializes the generator with an array of
- *   64-bit integers as the seeds.
- * - void mtgp64_init_by_str() initializes the generator with an array of
- *   character as the seeds.
- * - inline uint64_t mtgp64_genrand_uint64() generates and returns a
- *   64-bit unsigned integer.
- * - inline double mtgp64_genrand_close1_open2() generates and returns a
- *   double precision pseudorandom number which distributes uniformly
- *   in the range [1, 2).  This is the primitive and faster than
- *   generating numbers in other ranges.
- * - inline double mtgp64_genrand_close_open() generates and returns a double
- *   precision pseudorandom number which distributes uniformly in the
- *   range [0, 1).
- * - inline double mtgp64_genrand_open_close() generates and returns a double
- *   precision pseudorandom number which distributes uniformly in the
- *   range (0, 1].
- * - inline double mtgp64_genrand_open_open() generates and returns a double
- *   precision pseudorandom number which distributes uniformly in the
- *   range (0, 1).
- * - void mtgp64_print_idstring() prints the IDSTRING which identify
- *   the generator.
- * - void mtgp64_free() frees the allocated memory.
+ * And this project also provides 32-bit pseudorandom number generators of some
+ * Mersenne Prime Period: 2<sup>11213</sup>-1, 2<sup>23209</sup>-1 and
+ * 2<sup>44497</sup>-1.
+ *
+ * We expect MTGP is fast on Graphic Processors.
+ * see mtgp32-cuda.cu and mtgp64-cuda.cu sample files.
  *
  * @author Mutsuo Saito (saito\@our-domain) Hiroshima University
  * @author Makoto Matsumoto (m-mat\@our-domain) Hiroshima University
  *
  * Please change \b our-domain to \b math.sci.hiroshima-u.ac.jp
  *
- * @date 2009-10-23
+ * @date 2009-11-17
  *
  * Copyright (C) 2009 Mutsuo Saito, Makoto Matsumoto and Hiroshima
  * University. All rights reserved.

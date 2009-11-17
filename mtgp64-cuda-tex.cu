@@ -2,6 +2,10 @@
  * Sample Program for CUDA 2.2
  * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
  *
+ * This sample uses texture reference.
+ * The generation speed of PRNG using texture is faster than using
+ * constant tabel on Geforce GTX 260.
+ *
  * MTGP64-44497
  * This program generates 64-bit unsigned integers.
  * The period of generated integers is 2<sup>44497</sup>-1.
@@ -33,9 +37,13 @@ struct mtgp64_kernel_status_t {
     uint64_t status[N];
 };
 
+/*
+ * Texture References.
+ */
 texture<uint32_t, 1, cudaReadModeElementType> tex_param_ref;
 texture<uint32_t, 1, cudaReadModeElementType> tex_temper_ref;
 texture<uint32_t, 1, cudaReadModeElementType> tex_double_ref;
+
 /*
  * Generator Parameters.
  */
@@ -94,14 +102,12 @@ __device__ void para_rec(uint32_t *RH,
  *
  * @param VH MSBs of the output value should be tempered.
  * @param VL LSBs of the output value should be tempered.
- * @param TH MSBs of the tempering helper value.
  * @param TL LSBs of the tempering helper value.
  * @param bid block id.
  * @return the tempered value.
  */
 __device__ uint64_t temper(uint32_t VH,
 			   uint32_t VL,
-			   uint32_t TH,
 			   uint32_t TL,
 			   int bid) {
     uint32_t MAT;
@@ -116,19 +122,17 @@ __device__ uint64_t temper(uint32_t VH,
 
 /**
  * The tempering and converting function.
- * By using the preset-ted table, converting to IEEE format
+ * By using the presetted table, converting to IEEE format
  * and tempering are done simultaneously.
  *
  * @param VH MSBs of the output value should be tempered.
  * @param VL LSBs of the output value should be tempered.
- * @param TH MSBs of the tempering helper value.
  * @param TL LSBs of the tempering helper value.
  * @param bid block id.
  * @return the tempered and converted value.
  */
 __device__ uint64_t temper_double(uint32_t VH,
 				  uint32_t VL,
-				  uint32_t TH,
 				  uint32_t TL,
 				  int bid) {
     uint32_t MAT;
@@ -258,7 +262,6 @@ __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
 #endif
 	o = temper(YH,
 		   YL,
-		   status[0][LARGE_SIZE - N + tid + pos - 1],
 		   status[1][LARGE_SIZE - N + tid + pos - 1],
 		   bid);
 #if defined(DEBUG) && defined(__DEVICE_EMULATION__)
@@ -281,7 +284,6 @@ __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid + THREAD_NUM] = YL;
 	o = temper(YH,
 		   YL,
-		   status[0][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 		   status[1][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 		   bid);
 	d_data[size * bid + THREAD_NUM + i + tid] = o;
@@ -299,7 +301,6 @@ __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid + 2 * THREAD_NUM] = YL;
 	o = temper(YH,
 		   YL,
-		   status[0][tid + pos - 1 + 2 * THREAD_NUM - N],
 		   status[1][tid + pos - 1 + 2 * THREAD_NUM - N],
 		   bid);
 	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
@@ -346,7 +347,6 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid] = YL;
 	o = temper_double(YH,
 			  YL,
-			  status[0][LARGE_SIZE - N + tid + pos - 1],
 			  status[1][LARGE_SIZE - N + tid + pos - 1],
 			  bid);
 	d_data[size * bid + i + tid] = o;
@@ -365,7 +365,6 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 	o = temper_double(
 	    YH,
 	    YL,
-	    status[0][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 	    status[1][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 	    bid);
 	d_data[size * bid + THREAD_NUM + i + tid] = o;
@@ -383,7 +382,6 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid + 2 * THREAD_NUM] = YL;
 	o = temper_double(YH,
 			  YL,
-			  status[0][tid + pos - 1 + 2 * THREAD_NUM - N],
 			  status[1][tid + pos - 1 + 2 * THREAD_NUM - N],
 			  bid);
 	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;

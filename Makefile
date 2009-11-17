@@ -78,8 +78,18 @@ test32-cuda: mtgp32-cuda.cu mtgp32-fast.h mtgp32-param-fast.o mtgp32-fast.o
 	${NVCC} -o $@ mtgp32-cuda.cu mtgp32-param-fast.o mtgp32-fast.o \
 	 ${CUDALINK}
 
+test32-cuda-tex: mtgp32-cuda-tex.cu mtgp32-fast.h mtgp32-param-fast.o \
+	mtgp32-fast.o
+	${NVCC} -o $@ mtgp32-cuda-tex.cu mtgp32-param-fast.o mtgp32-fast.o \
+	 ${CUDALINK}
+
 test64-cuda: mtgp64-cuda.cu mtgp64-fast.h mtgp64-param-fast.o mtgp64-fast.o
 	${NVCC} -o $@ mtgp64-cuda.cu mtgp64-param-fast.o mtgp64-fast.o \
+	 ${CUDALINK}
+
+test64-cuda-tex: mtgp64-cuda-tex.cu mtgp64-fast.h mtgp64-param-fast.o \
+	mtgp64-fast.o
+	${NVCC} -o $@ mtgp64-cuda-tex.cu mtgp64-param-fast.o mtgp64-fast.o \
 	 ${CUDALINK}
 
 .c.o:

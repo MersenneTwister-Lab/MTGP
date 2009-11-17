@@ -2,6 +2,10 @@
  * Sample Program for CUDA 2.2
  * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
  *
+ * This sample uses texture reference.
+ * The generation speed of PRNG using texture is faster than using
+ * constant tabel on Geforce GTX 260.
+ *
  * MTGP32-23209
  * This program generates 32-bit unsigned integers.
  * The period of generated integers is 2<sup>23209</sup>-1.

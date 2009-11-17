@@ -1,8 +1,14 @@
-ver. 0.1
+ver. 1.0
 -------
-The first version.
+The release version.
+add using texture sample files.
+add tools directory.
 
 ver. 0.2
 -------
 add mtgp32 files
 add period certification to initialization.
+
+ver. 0.1
+-------
+start

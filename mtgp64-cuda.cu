@@ -1,11 +1,22 @@
-/*
- * Sample Program for CUDA 2.2
- * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
+/**
+ * @file mtgp64-cuda.cu
+ *
+ * @brief Sample Program for CUDA 2.2
  *
  * MTGP64-44497
  * This program generates 64-bit unsigned integers.
  * The period of generated integers is 2<sup>44497</sup>-1.
- * This also generates double precision floating point numbers.
+ *
+ * This also generates double precision floating point numbers
+ * uniformly distributed in the range [1, 2). (double r; 1.0 <= r < 2.0)
+ *
+ * @author Mutsuo Saito (Hiroshima University)
+ * @author Makoto Matsumoto (Hiroshima University)
+ *
+ * Copyright (C) 2009 Mutsuo Saito, Makoto Matsumoto and
+ * Hiroshima University. All rights reserved.
+ *
+ * The new BSD License is applied to this software, see LICENSE.txt
  */
 #define __STDC_FORMAT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
@@ -22,7 +33,7 @@ extern "C" {
 #define N 696
 #define THREAD_NUM 512
 #define LARGE_SIZE (THREAD_NUM * 3)
-#define BLOCK_NUM 32
+#define BLOCK_NUM 32	    /* You can change this value up to 128 */
 #define TBL_SIZE 16
 
 /**
@@ -57,15 +68,15 @@ __shared__ uint32_t status[2][LARGE_SIZE]; /* 512 * 3 elements, 12288 bytes. */
 /**
  * The function of the recursion formula calculation.
  *
- * @param RH 32-bit MSBs of output
- * @param RL 32-bit LSBs of output
- * @param X1H MSBs of the farthest part of state array.
- * @param X1L LSBs of the farthest part of state array.
- * @param X2H MSBs of the second farthest part of state array.
- * @param X2L LSBs of the second farthest part of state array.
- * @param YH MSBs of a part of state array.
- * @param YL LSBs of a part of state array.
- * @param bid block id.
+ * @param[out] RH 32-bit MSBs of output
+ * @param[out] RL 32-bit LSBs of output
+ * @param[in] X1H MSBs of the farthest part of state array.
+ * @param[in] X1L LSBs of the farthest part of state array.
+ * @param[in] X2H MSBs of the second farthest part of state array.
+ * @param[in] X2L LSBs of the second farthest part of state array.
+ * @param[in] YH MSBs of a part of state array.
+ * @param[in] YL LSBs of a part of state array.
+ * @param[in] bid block id.
  */
 __device__ void para_rec(uint32_t *RH,
 			 uint32_t *RL,
@@ -92,16 +103,14 @@ __device__ void para_rec(uint32_t *RH,
 /**
  * The tempering function.
  *
- * @param VH MSBs of the output value should be tempered.
- * @param VL LSBs of the output value should be tempered.
- * @param TH MSBs of the tempering helper value.
- * @param TL LSBs of the tempering helper value.
- * @param bid block id.
- * @return the tempered value.
+ * @param[in] VH MSBs of the output value should be tempered.
+ * @param[in] VL LSBs of the output value should be tempered.
+ * @param[in] TL LSBs of the tempering helper value.
+ * @param[in] bid block id.
+ * @return[in] the tempered value.
  */
 __device__ uint64_t temper(uint32_t VH,
 			   uint32_t VL,
-			   uint32_t TH,
 			   uint32_t TL,
 			   int bid) {
     uint32_t MAT;
@@ -119,16 +128,14 @@ __device__ uint64_t temper(uint32_t VH,
  * By using the preset-ted table, converting to IEEE format
  * and tempering are done simultaneously.
  *
- * @param VH MSBs of the output value should be tempered.
- * @param VL LSBs of the output value should be tempered.
- * @param TH MSBs of the tempering helper value.
- * @param TL LSBs of the tempering helper value.
- * @param bid block id.
+ * @param[in] VH MSBs of the output value should be tempered.
+ * @param[in] VL LSBs of the output value should be tempered.
+ * @param[in] TL LSBs of the tempering helper value.
+ * @param[in] bid block id.
  * @return the tempered and converted value.
  */
 __device__ uint64_t temper_double(uint32_t VH,
 				  uint32_t VL,
-				  uint32_t TH,
 				  uint32_t TL,
 				  int bid) {
     uint32_t MAT;
@@ -145,10 +152,10 @@ __device__ uint64_t temper_double(uint32_t VH,
  * Read the internal state vector from kernel I/O data, and
  * put them into shared memory.
  *
- * @param status shared memory.
- * @param d_status kernel I/O data
- * @param bid block id
- * @param tid thread id
+ * @param[out] status shared memory.
+ * @param[in] d_status kernel I/O data
+ * @param[in] bid block id
+ * @param[in] tid thread id
  */
 __device__ void status_read(uint32_t status[2][LARGE_SIZE],
 			    const mtgp64_kernel_status_t *d_status,
@@ -171,10 +178,10 @@ __device__ void status_read(uint32_t status[2][LARGE_SIZE],
  * Read the internal state vector from shared memory, and
  * write them into kernel I/O data.
  *
- * @param status shared memory.
- * @param d_status kernel I/O data
- * @param bid block id
- * @param tid thread id
+ * @param[out] status shared memory.
+ * @param[in] d_status kernel I/O data
+ * @param[in] bid block id
+ * @param[in] tid thread id
  */
 __device__ void status_write(mtgp64_kernel_status_t *d_status,
 			     const uint32_t status[2][LARGE_SIZE],
@@ -197,9 +204,9 @@ __device__ void status_write(mtgp64_kernel_status_t *d_status,
  * kernel function.
  * This function generates 64-bit unsigned integers in d_data
  *
- * @params d_status kernel I/O data
- * @params d_data output
- * @params size number of output data requested.
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output
+ * @param[in] size number of output data requested.
  */
 __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
 				     uint64_t* d_data, int size) {
@@ -258,7 +265,6 @@ __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
 #endif
 	o = temper(YH,
 		   YL,
-		   status[0][LARGE_SIZE - N + tid + pos - 1],
 		   status[1][LARGE_SIZE - N + tid + pos - 1],
 		   bid);
 #if defined(DEBUG) && defined(__DEVICE_EMULATION__)
@@ -281,7 +287,6 @@ __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid + THREAD_NUM] = YL;
 	o = temper(YH,
 		   YL,
-		   status[0][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 		   status[1][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 		   bid);
 	d_data[size * bid + THREAD_NUM + i + tid] = o;
@@ -299,7 +304,6 @@ __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid + 2 * THREAD_NUM] = YL;
 	o = temper(YH,
 		   YL,
-		   status[0][tid + pos - 1 + 2 * THREAD_NUM - N],
 		   status[1][tid + pos - 1 + 2 * THREAD_NUM - N],
 		   bid);
 	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
@@ -313,9 +317,9 @@ __global__ void mtgp64_uint64_kernel(mtgp64_kernel_status_t* d_status,
  * kernel function.
  * This function generates double precision floating point numbers in d_data.
  *
- * @params d_status kernel I/O data
- * @params d_data output. IEEE double precision format.
- * @params size number of output data requested.
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output. IEEE double precision format.
+ * @param[in] size number of output data requested.
  */
 __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 				     uint64_t* d_data, int size)
@@ -346,7 +350,6 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid] = YL;
 	o = temper_double(YH,
 			  YL,
-			  status[0][LARGE_SIZE - N + tid + pos - 1],
 			  status[1][LARGE_SIZE - N + tid + pos - 1],
 			  bid);
 	d_data[size * bid + i + tid] = o;
@@ -365,7 +368,6 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 	o = temper_double(
 	    YH,
 	    YL,
-	    status[0][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 	    status[1][(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
 	    bid);
 	d_data[size * bid + THREAD_NUM + i + tid] = o;
@@ -383,7 +385,6 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 	status[1][tid + 2 * THREAD_NUM] = YL;
 	o = temper_double(YH,
 			  YL,
-			  status[0][tid + pos - 1 + 2 * THREAD_NUM - N],
 			  status[1][tid + pos - 1 + 2 * THREAD_NUM - N],
 			  bid);
 	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
@@ -395,7 +396,7 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
 
 /**
  * This function sets constants in device memory.
- * @param params input, MTGP64 parameters.
+ * @param[in] params input, MTGP64 parameters.
  */
 void make_constant(const mtgp64_params_fast_t params[]) {
     const int size1 = sizeof(uint32_t) * BLOCK_NUM;
@@ -477,8 +478,8 @@ void make_constant(const mtgp64_params_fast_t params[]) {
 
 /**
  * This function initializes kernel I/O data.
- * @param d_status output kernel I/O data.
- * @param params MTGP64 parameters. needed for the initialization.
+ * @param[out] d_status output kernel I/O data.
+ * @param[in] params MTGP64 parameters. needed for the initialization.
  */
 void make_kernel_data(mtgp64_kernel_status_t *d_status,
 		     mtgp64_params_fast_t params[]) {
@@ -507,9 +508,9 @@ void make_kernel_data(mtgp64_kernel_status_t *d_status,
 
 /**
  * This function is used to compare the outputs with C program's.
- * @param array data to be printed.
- * @param size size of array.
- * @param block number of blocks.
+ * @param[in] array data to be printed.
+ * @param[in] size size of array.
+ * @param[in] block number of blocks.
  */
 void print_double_array(const double array[], int size, int block) {
     int b = size / block;
@@ -536,9 +537,9 @@ void print_double_array(const double array[], int size, int block) {
 
 /**
  * This function is used to compare the outputs with C program's.
- * @param array data to be printed.
- * @param size size of array.
- * @param block number of blocks.
+ * @param[in] array data to be printed.
+ * @param[in] size size of array.
+ * @param[in] block number of blocks.
  */
 void print_uint64_array(uint64_t array[], int size, int block) {
     int b = size / block;
@@ -567,8 +568,8 @@ void print_uint64_array(uint64_t array[], int size, int block) {
  * host function.
  * This function calls corresponding kernel function.
  *
- * @param d_status kernel I/O data.
- * @param num_data number of data to be generated.
+ * @param[in] d_status kernel I/O data.
+ * @param[in] num_data number of data to be generated.
  */
 void make_uint64_random(mtgp64_kernel_status_t* d_status, int num_data) {
     uint64_t* d_data;
@@ -622,8 +623,8 @@ void make_uint64_random(mtgp64_kernel_status_t* d_status, int num_data) {
  * host function.
  * This function calls corresponding kernel function.
  *
- * @param d_status kernel I/O data.
- * @param num_data number of data to be generated.
+ * @param[in] d_status kernel I/O data.
+ * @param[in] num_data number of data to be generated.
  */
 void make_double_random(mtgp64_kernel_status_t* d_status, int num_data) {
     uint64_t* d_data;

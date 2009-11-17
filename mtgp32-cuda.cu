@@ -1,11 +1,22 @@
-/*
- * Sample Program for CUDA 2.2
- * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
+/**
+ * @file mtgp32-cuda.cu
+ *
+ * @brief Sample Program for CUDA 2.2
  *
  * MTGP32-23209
  * This program generates 32-bit unsigned integers.
  * The period of generated integers is 2<sup>23209</sup>-1.
- * This also generates single precision floating point numbers.
+ *
+ * This also generates single precision floating point numbers
+ * uniformly distributed in the range [1, 2). (float r; 1.0 <= r < 2.0)
+ *
+ * @author Mutsuo Saito (Hiroshima University)
+ * @author Makoto Matsumoto (Hiroshima University)
+ *
+ * Copyright (C) 2009 Mutsuo Saito, Makoto Matsumoto and
+ * Hiroshima University. All rights reserved.
+ *
+ * The new BSD License is applied to this software, see LICENSE.txt
  */
 #define __STDC_FORMAT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
@@ -22,7 +33,7 @@ extern "C" {
 #define N 726
 #define THREAD_NUM 512
 #define LARGE_SIZE (THREAD_NUM * 3)
-#define BLOCK_NUM 32
+#define BLOCK_NUM 32	     /* You can change this value up to 128 */
 #define TBL_SIZE 16
 
 /**
@@ -156,9 +167,9 @@ __device__ void status_write(mtgp32_kernel_status_t *d_status,
  * kernel function.
  * This function generates 32-bit unsigned integers in d_data
  *
- * @params[in,out] d_status kernel I/O data
- * @params[out] d_data output
- * @params[in] size number of output data requested.
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output
+ * @param[in] size number of output data requested.
  */
 __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
 				     uint32_t* d_data, int size) {
@@ -235,9 +246,9 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
  * kernel function.
  * This function generates single precision floating point numbers in d_data.
  *
- * @params[in,out] d_status kernel I/O data
- * @params[out] d_data output. IEEE single precision format.
- * @params[in] size number of output data requested.
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output. IEEE single precision format.
+ * @param[in] size number of output data requested.
  */
 __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
 				     uint32_t* d_data, int size)
@@ -290,7 +301,7 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
 
 /**
  * This function sets constants in device memory.
- * @param params input, MTGP32 parameters.
+ * @param[in] params input, MTGP32 parameters.
  */
 void make_constant(const mtgp32_params_fast_t params[]) {
     const int size1 = sizeof(uint32_t) * BLOCK_NUM;
@@ -364,8 +375,8 @@ void make_constant(const mtgp32_params_fast_t params[]) {
 
 /**
  * This function initializes kernel I/O data.
- * @param d_status output kernel I/O data.
- * @param params MTGP32 parameters. needed for the initialization.
+ * @param[out] d_status output kernel I/O data.
+ * @param[in] params MTGP32 parameters. needed for the initialization.
  */
 void make_kernel_data(mtgp32_kernel_status_t *d_status,
 		     mtgp32_params_fast_t params[]) {
@@ -394,9 +405,9 @@ void make_kernel_data(mtgp32_kernel_status_t *d_status,
 
 /**
  * This function is used to compare the outputs with C program's.
- * @param array data to be printed.
- * @param size size of array.
- * @param block number of blocks.
+ * @param[in] array data to be printed.
+ * @param[in] size size of array.
+ * @param[in] block number of blocks.
  */
 void print_float_array(const float array[], int size, int block) {
     int b = size / block;
@@ -428,9 +439,9 @@ void print_float_array(const float array[], int size, int block) {
 
 /**
  * This function is used to compare the outputs with C program's.
- * @param array data to be printed.
- * @param size size of array.
- * @param block number of blocks.
+ * @param[in] array data to be printed.
+ * @param[in] size size of array.
+ * @param[in] block number of blocks.
  */
 void print_uint32_array(uint32_t array[], int size, int block) {
     int b = size / block;
@@ -467,8 +478,8 @@ void print_uint32_array(uint32_t array[], int size, int block) {
  * host function.
  * This function calls corresponding kernel function.
  *
- * @param d_status kernel I/O data.
- * @param num_data number of data to be generated.
+ * @param[in] d_status kernel I/O data.
+ * @param[in] num_data number of data to be generated.
  */
 void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
     uint32_t* d_data;
@@ -522,8 +533,8 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
  * host function.
  * This function calls corresponding kernel function.
  *
- * @param d_status kernel I/O data.
- * @param num_data number of data to be generated.
+ * @param[in] d_status kernel I/O data.
+ * @param[in] num_data number of data to be generated.
  */
 void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
     uint32_t* d_data;
