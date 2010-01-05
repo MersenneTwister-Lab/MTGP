@@ -179,7 +179,7 @@ int mtgp64_init_by_array(mtgp64_ref_t *mtgp64,
 			 const mtgp64_params_ref_t *para,
 			 const uint64_t *array, int length) {
     int i, j, count;
-    uint32_t r;
+    uint64_t r;
     int lag;
     int mid;
     int size = para->mexp / 64 + 1;
@@ -275,7 +275,7 @@ int mtgp64_init_by_array(mtgp64_ref_t *mtgp64,
 int mtgp64_init_by_str(mtgp64_ref_t *mtgp64,
 		       const mtgp64_params_ref_t *para, const char *array) {
     int i, j, count;
-    uint32_t r;
+    uint64_t r;
     int lag;
     int mid;
     int size = para->mexp / 64 + 1;
@@ -474,7 +474,7 @@ void print_open_open(mtgp64_ref_t *mtgp64, int count);
 void print_uint64(mtgp64_ref_t *mtgp64, int count) {
     int i;
     for (i = 0; i < count; i++) {
-	printf("%20"PRIu64" ", mtgp64_genrand_uint64(mtgp64));
+	printf("%016"PRIx64" ", mtgp64_genrand_uint64(mtgp64));
 	if (i % 3 == 2) {
 	    printf("\n");
 	}

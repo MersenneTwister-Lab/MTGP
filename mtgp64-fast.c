@@ -157,7 +157,7 @@ int mtgp64_init_by_array(mtgp64_fast_t *mtgp64,
 			 const mtgp64_params_fast_t *para,
 			 uint64_t *array, int length) {
     int i, j, count;
-    uint32_t r;
+    uint64_t r;
     int lag;
     int mid;
     int size = para->mexp / 64 + 1;
@@ -255,7 +255,7 @@ int mtgp64_init_by_array(mtgp64_fast_t *mtgp64,
 int mtgp64_init_by_str(mtgp64_fast_t *mtgp64,
 		       const mtgp64_params_fast_t *para, char *array) {
     int i, j, count;
-    uint32_t r;
+    uint64_t r;
     int lag;
     int mid;
     int size = para->mexp / 64 + 1;
