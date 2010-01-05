@@ -1,3 +1,7 @@
+ver. 1.0.1
+-------
+fixed 64bit init_by_array, init_by_str bug.
+
 ver. 1.0
 -------
 The release version.

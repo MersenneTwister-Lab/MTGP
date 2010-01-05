@@ -24,9 +24,9 @@
  *
  * Please change \b our-domain to \b math.sci.hiroshima-u.ac.jp
  *
- * @date 2009-11-17
+ * @date 2010-1-5
  *
- * Copyright (C) 2009 Mutsuo Saito, Makoto Matsumoto and Hiroshima
+ * Copyright (C) 2009, 2010 Mutsuo Saito, Makoto Matsumoto and Hiroshima
  * University. All rights reserved.
  *
  * The new BSD License is applied to this software.

@@ -375,7 +375,7 @@ void print_open_open(mtgp64_fast_t *mtgp64, int count);
 void print_uint64(mtgp64_fast_t *mtgp64, int count) {
     int i;
     for (i = 0; i < count; i++) {
-	printf("%20"PRIu64" ", mtgp64_genrand_uint64(mtgp64));
+	printf("%016"PRIx64" ", mtgp64_genrand_uint64(mtgp64));
 	if (i % 3 == 2) {
 	    printf("\n");
 	}
