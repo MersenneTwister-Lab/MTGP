@@ -23,8 +23,8 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 STD = -std=c99
 CC = gcc
 NVCC = nvcc
-CUTILINC = -I$(HOME)/NVIDIA_CUDA_SDK/common/inc
-CUTILLIB = -L$(HOME)/NVIDIA_CUDA_SDK/lib -lcutil
+CUTILINC = -I$(HOME)/NVIDIA_GPU_Computing_SDK/C/common/inc
+CUTILLIB = -L$(HOME)/NVIDIA_GPU_Computing_SDK/C/lib -lcutil
 CUDALINK = -lcuda
 CPP = g++
 CPPFLAGS = -Wall -Wextra -O3 -msse3
@@ -98,6 +98,11 @@ test64-cuda-tex: mtgp64-cuda-tex.cu mtgp64-fast.h mtgp64-param-fast.o \
 	mtgp64-fast.o
 	${NVCC} -o $@ mtgp64-cuda-tex.cu mtgp64-param-fast.o mtgp64-fast.o \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
+
+test64-cuda11213-tex: mtgp64-cuda11213-tex.cu mtgp64-fast.h \
+	mtgp64dc-param-11213.c  mtgp64-fast.o
+	${NVCC} -o $@ mtgp64-cuda11213-tex.cu mtgp64-fast.o \
+	${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
 .c.o:
 	${CC} ${CCFLAGS} -c $<

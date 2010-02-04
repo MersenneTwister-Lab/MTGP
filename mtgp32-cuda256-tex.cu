@@ -1,5 +1,5 @@
 /*
- * Sample Program for CUDA 2.2
+ * Sample Program for CUDA 2.3
  * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
  *
  * This sample uses texture reference.
@@ -349,39 +349,50 @@ void make_constant(const mtgp32_params_fast_t params[], int block_num) {
 }
 
 /**
- * This function sets constants in device memory.
+ * This function sets texture lookup table.
  * @param params input, MTGP32 parameters.
+ * @param d_texture_tbl device memory used for texture bind
+ * @param block_num block number used for kernel call
  */
 void make_texture(const mtgp32_params_fast_t params[],
-		  uint32_t *d_texture_tbl,
+		  uint32_t *d_texture_tbl[3],
 		  int block_num) {
     const int count = block_num * TBL_SIZE;
     const int size = sizeof(uint32_t) * count;
-    uint32_t *h_texture_tbl;
-    h_texture_tbl = (uint32_t *)malloc(size * 3);
-    if (h_texture_tbl == NULL) {
-	printf("failure in allocating host memory for constant table.\n");
-	exit(1);
+    uint32_t *h_texture_tbl[3];
+    int i, j;
+    for (i = 0; i < 3; i++) {
+	h_texture_tbl[i] = (uint32_t *)malloc(size);
+	if (h_texture_tbl[i] == NULL) {
+	    for (j = 0; j < i; j++) {
+		free(h_texture_tbl[i]);
+	    }
+	    printf("failure in allocating host memory for constant table.\n");
+	    exit(1);
+	}
     }
     for (int i = 0; i < block_num; i++) {
 	for (int j = 0; j < TBL_SIZE; j++) {
-	    h_texture_tbl[i * TBL_SIZE + j] = params[i].tbl[j];
-	    h_texture_tbl[count + i * TBL_SIZE + j] = params[i].tmp_tbl[j];
-	    h_texture_tbl[2 * count + i * TBL_SIZE + j]
-		= params[i].flt_tmp_tbl[j];
+	    h_texture_tbl[0][i * TBL_SIZE + j] = params[i].tbl[j];
+	    h_texture_tbl[1][i * TBL_SIZE + j] = params[i].tmp_tbl[j];
+	    h_texture_tbl[2][i * TBL_SIZE + j] = params[i].flt_tmp_tbl[j];
 	}
     }
-    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl, h_texture_tbl, size * 3,
+    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[0], h_texture_tbl[0], size,
+			      cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[1], h_texture_tbl[1], size,
+			      cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[2], h_texture_tbl[2], size,
 			      cudaMemcpyHostToDevice));
     tex_param_ref.filterMode = cudaFilterModePoint;
     tex_temper_ref.filterMode = cudaFilterModePoint;
     tex_single_ref.filterMode = cudaFilterModePoint;
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl, size));
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_temper_ref,
-				   d_texture_tbl + count, size));
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_single_ref,
-				   d_texture_tbl + count * 2, size));
-    free(h_texture_tbl);
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl[0], size));
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex_temper_ref, d_texture_tbl[1], size));
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex_single_ref, d_texture_tbl[2], size));
+    free(h_texture_tbl[0]);
+    free(h_texture_tbl[1]);
+    free(h_texture_tbl[2]);
 }
 
 /**
@@ -600,15 +611,15 @@ void make_single_random(mtgp32_kernel_status_t* d_status,
     CUDA_SAFE_CALL(cudaFree(d_data));
 }
 
-int main(int argc, char** argv)
+int main(int argc, char *argv[])
 {
     // LARGE_SIZE is a multiple of 16
     int num_data = 10000000;
     int block_num;
     int num_unit;
     int r;
-    mtgp32_kernel_status_t* d_status;
-    uint32_t *d_texture;
+    mtgp32_kernel_status_t *d_status;
+    uint32_t *d_texture[3];
 
     if (argc >= 2) {
 	errno = 0;
@@ -639,8 +650,12 @@ int main(int argc, char** argv)
     num_unit = LARGE_SIZE * block_num;
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
 			      sizeof(mtgp32_kernel_status_t) * block_num));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture,
-			      sizeof(uint32_t) * block_num * TBL_SIZE * 3));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[0],
+			      sizeof(uint32_t) * block_num * TBL_SIZE));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[1],
+			      sizeof(uint32_t) * block_num * TBL_SIZE));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[2],
+			      sizeof(uint32_t) * block_num * TBL_SIZE));
     r = num_data % num_unit;
     if (r != 0) {
 	num_data = num_data + num_unit - r;
@@ -653,6 +668,8 @@ int main(int argc, char** argv)
 
     //finalize
     CUDA_SAFE_CALL(cudaFree(d_status));
-    CUDA_SAFE_CALL(cudaFree(d_texture));
+    CUDA_SAFE_CALL(cudaFree(d_texture[0]));
+    CUDA_SAFE_CALL(cudaFree(d_texture[1]));
+    CUDA_SAFE_CALL(cudaFree(d_texture[2]));
     CUT_EXIT(argc, argv);
 }

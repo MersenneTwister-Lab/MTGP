@@ -1,5 +1,5 @@
 /*
- * Sample Program for CUDA 2.2
+ * Sample Program for CUDA 2.3
  * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
  *
  * This sample uses texture reference.
@@ -26,7 +26,8 @@ extern "C" {
 #define N 726
 #define THREAD_NUM 512
 #define LARGE_SIZE (THREAD_NUM * 3)
-#define BLOCK_NUM 32
+//#define BLOCK_NUM 32
+#define BLOCK_NUM_MAX 128
 #define TBL_SIZE 16
 
 /**
@@ -43,9 +44,9 @@ texture<uint32_t, 1, cudaReadModeElementType> tex_single_ref;
 /*
  * Generator Parameters.
  */
-__constant__ uint32_t pos_tbl[BLOCK_NUM];
-__constant__ uint32_t sh1_tbl[BLOCK_NUM];
-__constant__ uint32_t sh2_tbl[BLOCK_NUM];
+__constant__ uint32_t pos_tbl[BLOCK_NUM_MAX];
+__constant__ uint32_t sh1_tbl[BLOCK_NUM_MAX];
+__constant__ uint32_t sh2_tbl[BLOCK_NUM_MAX];
 /* high_mask and low_mask should be set by make_constant(), but
  * did not work.
  */
@@ -296,8 +297,9 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
  * This function sets constants in device memory.
  * @param params input, MTGP32 parameters.
  */
-void make_constant(const mtgp32_params_fast_t params[]) {
-    const int size1 = sizeof(uint32_t) * BLOCK_NUM;
+void make_constant(const mtgp32_params_fast_t params[],
+		   int block_num) {
+    const int size1 = sizeof(uint32_t) * block_num;
     uint32_t *h_pos_tbl;
     uint32_t *h_sh1_tbl;
     uint32_t *h_sh2_tbl;
@@ -323,7 +325,7 @@ void make_constant(const mtgp32_params_fast_t params[]) {
 #if 0
     h_mask = params[0].mask;
 #endif
-    for (int i = 0; i < BLOCK_NUM; i++) {
+    for (int i = 0; i < block_num; i++) {
 	h_pos_tbl[i] = params[i].pos;
 	h_sh1_tbl[i] = params[i].sh1;
 	h_sh2_tbl[i] = params[i].sh2;
@@ -345,38 +347,50 @@ void make_constant(const mtgp32_params_fast_t params[]) {
 }
 
 /**
- * This function sets constants in device memory.
+ * This function sets texture lookup table.
  * @param params input, MTGP32 parameters.
+ * @param d_texture_tbl device memory used for texture bind
+ * @param block_num block number used for kernel call
  */
 void make_texture(const mtgp32_params_fast_t params[],
-		  uint32_t *d_texture_tbl) {
-    const int count = BLOCK_NUM * TBL_SIZE;
+		  uint32_t *d_texture_tbl[3],
+		  int block_num) {
+    const int count = block_num * TBL_SIZE;
     const int size = sizeof(uint32_t) * count;
-    uint32_t *h_texture_tbl;
-    h_texture_tbl = (uint32_t *)malloc(size * 3);
-    if (h_texture_tbl == NULL) {
-	printf("failure in allocating host memory for constant table.\n");
-	exit(1);
-    }
-    for (int i = 0; i < BLOCK_NUM; i++) {
-	for (int j = 0; j < TBL_SIZE; j++) {
-	    h_texture_tbl[i * TBL_SIZE + j] = params[i].tbl[j];
-	    h_texture_tbl[count + i * TBL_SIZE + j] = params[i].tmp_tbl[j];
-	    h_texture_tbl[2 * count + i * TBL_SIZE + j]
-		= params[i].flt_tmp_tbl[j];
+    uint32_t *h_texture_tbl[3];
+    int i, j;
+    for (i = 0; i < 3; i++) {
+	h_texture_tbl[i] = (uint32_t *)malloc(size);
+	if (h_texture_tbl[i] == NULL) {
+	    for (j = 0; j < i; j++) {
+		free(h_texture_tbl[i]);
+	    }
+	    printf("failure in allocating host memory for constant table.\n");
+	    exit(1);
 	}
     }
-    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl, h_texture_tbl, size * 3,
+    for (int i = 0; i < block_num; i++) {
+	for (int j = 0; j < TBL_SIZE; j++) {
+	    h_texture_tbl[0][i * TBL_SIZE + j] = params[i].tbl[j];
+	    h_texture_tbl[1][i * TBL_SIZE + j] = params[i].tmp_tbl[j];
+	    h_texture_tbl[2][i * TBL_SIZE + j] = params[i].flt_tmp_tbl[j];
+	}
+    }
+    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[0], h_texture_tbl[0], size,
+			      cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[1], h_texture_tbl[1], size,
+			      cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[2], h_texture_tbl[2], size,
 			      cudaMemcpyHostToDevice));
     tex_param_ref.filterMode = cudaFilterModePoint;
     tex_temper_ref.filterMode = cudaFilterModePoint;
     tex_single_ref.filterMode = cudaFilterModePoint;
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl, size));
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_temper_ref,
-				   d_texture_tbl + count, size));
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_single_ref,
-				   d_texture_tbl + count * 2, size));
-    free(h_texture_tbl);
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl[0], size));
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex_temper_ref, d_texture_tbl[1], size));
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex_single_ref, d_texture_tbl[2], size));
+    free(h_texture_tbl[0]);
+    free(h_texture_tbl[1]);
+    free(h_texture_tbl[2]);
 }
 
 /**
@@ -385,15 +399,16 @@ void make_texture(const mtgp32_params_fast_t params[],
  * @param params MTGP32 parameters. needed for the initialization.
  */
 void make_kernel_data(mtgp32_kernel_status_t *d_status,
-		     mtgp32_params_fast_t params[]) {
+		      mtgp32_params_fast_t params[],
+		      int block_num) {
     mtgp32_kernel_status_t* h_status = (mtgp32_kernel_status_t *) malloc(
-	sizeof(mtgp32_kernel_status_t) * BLOCK_NUM);
+	sizeof(mtgp32_kernel_status_t) * block_num);
 
     if (h_status == NULL) {
 	printf("failure in allocating host memory for kernel I/O data.\n");
 	exit(8);
     }
-    for (int i = 0; i < BLOCK_NUM; i++) {
+    for (int i = 0; i < block_num; i++) {
 	mtgp32_init_state(&(h_status[i].status[0]), &params[i], i + 1);
     }
 #if defined(DEBUG)
@@ -404,7 +419,7 @@ void make_kernel_data(mtgp32_kernel_status_t *d_status,
 #endif
     CUDA_SAFE_CALL(cudaMemcpy(d_status,
 			      h_status,
-			      sizeof(mtgp32_kernel_status_t) * BLOCK_NUM,
+			      sizeof(mtgp32_kernel_status_t) * block_num,
 			      cudaMemcpyHostToDevice));
     free(h_status);
 }
@@ -487,7 +502,9 @@ void print_uint32_array(uint32_t array[], int size, int block) {
  * @param d_status kernel I/O data.
  * @param num_data number of data to be generated.
  */
-void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
+void make_uint32_random(mtgp32_kernel_status_t* d_status,
+			int num_data,
+			int block_num) {
     uint32_t* d_data;
     unsigned int timer = 0;
     uint32_t* h_data;
@@ -509,8 +526,8 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
     }
 
     /* kernel call */
-    mtgp32_uint32_kernel<<< BLOCK_NUM, THREAD_NUM>>>(
-	d_status, d_data, num_data / BLOCK_NUM);
+    mtgp32_uint32_kernel<<< block_num, THREAD_NUM>>>(
+	d_status, d_data, num_data / block_num);
     cudaThreadSynchronize();
 
     e = cudaGetLastError();
@@ -525,7 +542,7 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
 		   sizeof(uint32_t) * num_data,
 		   cudaMemcpyDeviceToHost));
     gputime = cutGetTimerValue(timer);
-    print_uint32_array(h_data, num_data, BLOCK_NUM);
+    print_uint32_array(h_data, num_data, block_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
@@ -542,7 +559,9 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
  * @param d_status kernel I/O data.
  * @param num_data number of data to be generated.
  */
-void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
+void make_single_random(mtgp32_kernel_status_t* d_status,
+			int num_data,
+			int block_num) {
     uint32_t* d_data;
     unsigned int timer = 0;
     float* h_data;
@@ -564,8 +583,8 @@ void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
     }
 
     /* kernel call */
-    mtgp32_single_kernel<<< BLOCK_NUM, THREAD_NUM >>>(
-	d_status, d_data, num_data / BLOCK_NUM);
+    mtgp32_single_kernel<<< block_num, THREAD_NUM >>>(
+	d_status, d_data, num_data / block_num);
     cudaThreadSynchronize();
 
     e = cudaGetLastError();
@@ -580,7 +599,7 @@ void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
 		   sizeof(uint32_t) * num_data,
 		   cudaMemcpyDeviceToHost));
     gputime = cutGetTimerValue(timer);
-    print_float_array(h_data, num_data, BLOCK_NUM);
+    print_float_array(h_data, num_data, block_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
@@ -590,43 +609,65 @@ void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
     CUDA_SAFE_CALL(cudaFree(d_data));
 }
 
-int main(int argc, char** argv)
+int main(int argc, char *argv[])
 {
     // LARGE_SIZE is a multiple of 16
     int num_data = 10000000;
-    int num_unit = LARGE_SIZE * BLOCK_NUM;
+    int block_num;
+    int num_unit;
     int r;
-    mtgp32_kernel_status_t* d_status;
-    uint32_t *d_texture;
+    mtgp32_kernel_status_t *d_status;
+    uint32_t *d_texture[3];
 
-    CUT_DEVICE_INIT(argc, argv);
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
-			      sizeof(mtgp32_kernel_status_t) * BLOCK_NUM));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture,
-			      sizeof(uint32_t) * BLOCK_NUM * TBL_SIZE * 3));
     if (argc >= 2) {
 	errno = 0;
-	num_data = strtol(argv[1], NULL, 10);
+	block_num = strtol(argv[1], NULL, 10);
 	if (errno) {
-	    printf("%s number_of_output\n", argv[0]);
+	    printf("%s number_of_block number_of_output\n", argv[0]);
 	    return 1;
 	}
+	if (block_num < 1 || block_num > BLOCK_NUM_MAX) {
+	    printf("%s block_num should be between 1 and %d\n",
+		   argv[0], BLOCK_NUM_MAX);
+	    return 1;
+	}
+	errno = 0;
+	num_data = strtol(argv[2], NULL, 10);
+	if (errno) {
+	    printf("%s number_of_block number_of_output\n", argv[0]);
+	    return 1;
+	}
+	argc -= 2;
+	argv += 2;
     } else {
-	printf("%s number_of_output\n", argv[0]);
+	printf("%s number_of_block number_of_output\n", argv[0]);
 	return 1;
     }
+    CUT_DEVICE_INIT(argc, argv);
+
+    num_unit = LARGE_SIZE * block_num;
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
+			      sizeof(mtgp32_kernel_status_t) * block_num));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[0],
+			      sizeof(uint32_t) * block_num * TBL_SIZE));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[1],
+			      sizeof(uint32_t) * block_num * TBL_SIZE));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[2],
+			      sizeof(uint32_t) * block_num * TBL_SIZE));
     r = num_data % num_unit;
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    make_constant(mtgp32_params_fast_23209);
-    make_texture(mtgp32_params_fast_23209, d_texture);
-    make_kernel_data(d_status, mtgp32_params_fast_23209);
-    make_uint32_random(d_status, num_data);
-    make_single_random(d_status, num_data);
+    make_constant(mtgp32_params_fast_23209, block_num);
+    make_texture(mtgp32_params_fast_23209, d_texture, block_num);
+    make_kernel_data(d_status, mtgp32_params_fast_23209, block_num);
+    make_uint32_random(d_status, num_data, block_num);
+    make_single_random(d_status, num_data, block_num);
 
     //finalize
     CUDA_SAFE_CALL(cudaFree(d_status));
-    CUDA_SAFE_CALL(cudaFree(d_texture));
+    CUDA_SAFE_CALL(cudaFree(d_texture[0]));
+    CUDA_SAFE_CALL(cudaFree(d_texture[1]));
+    CUDA_SAFE_CALL(cudaFree(d_texture[2]));
     CUT_EXIT(argc, argv);
 }
