@@ -24,9 +24,10 @@ extern "C" {
 #include "mtgp64dc-param-11213.c"
 }
 #define MEXP 11213
-#define N 176
-#define THREAD_NUM 128
+#define N MTGPDC_N
+#define THREAD_NUM MTGPDC_FLOOR_2P
 #define LARGE_SIZE (THREAD_NUM * 3)
+#define PARAM_NUM_MAX mtgpdc_params_11213_num
 #define BLOCK_NUM_MAX 200
 #define TBL_SIZE 16
 
@@ -392,6 +393,21 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
     status_write(d_status, status, bid, tid);
 }
 
+int get_suitable_block_num(int word_size) {
+    cudaDeviceProp dev;
+    int use_share_per_block = LARGE_SIZE * word_size;
+    int max_block;
+    int thread_num;
+
+    CUDA_SAFE_CALL(cudaGetDeviceProperties( &dev, 0));
+    max_block = dev.sharedMemPerBlock / use_share_per_block;
+    thread_num = THREAD_NUM * max_block;
+    if (dev.maxThreadsPerBlock < THREAD_NUM) {
+	thread_num = dev.maxThreadsPerBlock;
+    }
+    return (thread_num / THREAD_NUM) * dev.multiProcessorCount;
+}
+
 /**
  * This function sets constants in device memory.
  * @param params input, MTGP64 parameters.
@@ -705,6 +721,7 @@ int main(int argc, char** argv)
     // LARGE_SIZE is a multiple of 16
     int num_data = 10000000;
     int block_num;
+    int block_num_max;
     int num_unit;
     int r;
     mtgp64_kernel_status_t* d_status;
@@ -717,9 +734,14 @@ int main(int argc, char** argv)
 	    printf("%s number_of_block number_of_output\n", argv[0]);
 	    return 1;
 	}
-	if (block_num < 1 || block_num > BLOCK_NUM_MAX) {
+	if (BLOCK_NUM_MAX < PARAM_NUM_MAX) {
+	    block_num_max = BLOCK_NUM_MAX;
+	} else {
+	    block_num_max = PARAM_NUM_MAX;
+	}
+	if (block_num < 1 || block_num > block_num_max) {
 	    printf("%s block_num should be between 1 and %d\n",
-		   argv[0], BLOCK_NUM_MAX);
+		   argv[0], block_num_max);
 	    return 1;
 	}
 	errno = 0;
@@ -731,7 +753,10 @@ int main(int argc, char** argv)
 	argc -= 2;
 	argv += 2;
     } else {
+	CUT_DEVICE_INIT(argc, argv);
 	printf("%s number_of_block number_of_output\n", argv[0]);
+	printf("The suitable number of blocks for device 0 will be %d.\n",
+	       get_suitable_block_num(sizeof(uint64_t)));
 	return 1;
     }
     CUT_DEVICE_INIT(argc, argv);
@@ -748,9 +773,9 @@ int main(int argc, char** argv)
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    make_constant(mtgp64_params_fast_11213, block_num);
-    make_texture(mtgp64_params_fast_11213, d_texture, block_num);
-    make_kernel_data(d_status, mtgp64_params_fast_11213, block_num);
+    make_constant(mtgp64dc_params_fast_11213, block_num);
+    make_texture(mtgp64dc_params_fast_11213, d_texture, block_num);
+    make_kernel_data(d_status, mtgp64dc_params_fast_11213, block_num);
     make_uint64_random(d_status, num_data, block_num);
     make_double_random(d_status, num_data, block_num);
 

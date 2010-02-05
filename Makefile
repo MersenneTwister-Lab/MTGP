@@ -4,7 +4,7 @@
 # @author Mutsuo Saito (Hiroshima University)
 # @author Makoto Matsumoto (Hiroshima University)
 #
-# Copyright (C) 2009 Mutsuo Saito, Makoto Matsumoto and
+# Copyright (C) 2009, 2010 Mutsuo Saito, Makoto Matsumoto and
 # Hiroshima University. All rights reserved.
 #
 # The new BSD License is applied to this software.
@@ -80,9 +80,9 @@ test32-cuda: mtgp32-cuda.cu mtgp32-fast.h mtgp32-param-fast.o mtgp32-fast.o
 	${NVCC} -o $@ mtgp32-cuda.cu mtgp32-param-fast.o mtgp32-fast.o \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
-test32-cuda-tex: mtgp32-cuda-tex.cu mtgp32-fast.h mtgp32-param-fast.o \
+test32-cuda-tex: mtgp32-cuda-tex.cu mtgp32-fast.h mtgp32dc-param-11213.c \
 	mtgp32-fast.o
-	${NVCC} -o $@ mtgp32-cuda-tex.cu mtgp32-param-fast.o mtgp32-fast.o \
+	${NVCC} -o $@ mtgp32-cuda-tex.cu mtgp32-fast.o \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
 test32-cuda256-tex: mtgp32-cuda256-tex.cu mtgp32-fast.h mtgp32-param-fast.o \

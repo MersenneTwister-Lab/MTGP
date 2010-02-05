@@ -6,7 +6,7 @@
  * The generation speed of PRNG using texture is faster than using
  * constant tabel on Geforce GTX 260.
  *
- * MTGP32-23209
+ * MTGP32-11213
  * This program generates 32-bit unsigned integers.
  * The period of generated integers is 2<sup>23209</sup>-1.
  * This also generates single precision floating point numbers.
@@ -14,6 +14,7 @@
 #define __STDC_FORMAT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
 #include <stdio.h>
+#include <cuda.h>
 #include <cutil.h>
 #include <stdint.h>
 #include <inttypes.h>
@@ -21,13 +22,14 @@
 #include <stdlib.h>
 extern "C" {
 #include "mtgp32-fast.h"
+#include "mtgp32dc-param-11213.c"
 }
-#define MEXP 23209
-#define N 726
-#define THREAD_NUM 512
+#define MEXP 11213
+#define N MTGPDC_N
+#define THREAD_NUM MTGPDC_FLOOR_2P
 #define LARGE_SIZE (THREAD_NUM * 3)
 //#define BLOCK_NUM 32
-#define BLOCK_NUM_MAX 128
+#define BLOCK_NUM_MAX 200
 #define TBL_SIZE 16
 
 /**
@@ -291,6 +293,33 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
     }
     // write back status for next call
     status_write(d_status, status, bid, tid);
+}
+
+int get_suitable_block_num(int word_size) {
+    cudaDeviceProp dev;
+    CUdevice cuDevice;
+    int max_thread_dev;
+    int max_block, max_block_mem, max_block_dev;
+    int major, minor;
+
+    CUDA_SAFE_CALL(cudaGetDeviceProperties(&dev, 0));
+    cuDeviceGet(&cuDevice, 0);
+    cuDeviceComputeCapability(&major, &minor, cuDevice);
+    max_block_mem = dev.sharedMemPerBlock / (LARGE_SIZE * word_size);
+    if (major <= 1 && minor <= 1) {
+	max_thread_dev = 768;
+    } else if (major <= 1 && minor <= 3) {
+	max_thread_dev = 1024;
+    } else {
+	max_thread_dev = 1024;
+    }
+    max_block_dev = max_thread_dev / THREAD_NUM;
+    if (max_block_mem < max_block_dev) {
+	max_block = max_block_mem;
+    } else {
+	max_block = max_block_dev;
+    }
+    return max_block * dev.multiProcessorCount;
 }
 
 /**
@@ -641,6 +670,8 @@ int main(int argc, char *argv[])
 	argv += 2;
     } else {
 	printf("%s number_of_block number_of_output\n", argv[0]);
+	printf("the suitable number of blocks will be %d\n",
+	       get_suitable_block_num(sizeof(uint32_t)));
 	return 1;
     }
     CUT_DEVICE_INIT(argc, argv);
@@ -658,9 +689,9 @@ int main(int argc, char *argv[])
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    make_constant(mtgp32_params_fast_23209, block_num);
-    make_texture(mtgp32_params_fast_23209, d_texture, block_num);
-    make_kernel_data(d_status, mtgp32_params_fast_23209, block_num);
+    make_constant(mtgp32dc_params_fast_11213, block_num);
+    make_texture(mtgp32dc_params_fast_11213, d_texture, block_num);
+    make_kernel_data(d_status, mtgp32dc_params_fast_11213, block_num);
     make_uint32_random(d_status, num_data, block_num);
     make_single_random(d_status, num_data, block_num);
 
