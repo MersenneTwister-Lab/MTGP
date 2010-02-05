@@ -3,9 +3,9 @@
  *
  * @brief Sample Program for CUDA 2.2
  *
- * MTGP32-23209
+ * MTGP32-11213
  * This program generates 32-bit unsigned integers.
- * The period of generated integers is 2<sup>23209</sup>-1.
+ * The period of generated integers is 2<sup>11213</sup>-1.
  *
  * This also generates single precision floating point numbers
  * uniformly distributed in the range [1, 2). (float r; 1.0 <= r < 2.0)
@@ -21,6 +21,7 @@
 #define __STDC_FORMAT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
 #include <stdio.h>
+#include <cuda.h>
 #include <cutil.h>
 #include <stdint.h>
 #include <inttypes.h>
@@ -28,12 +29,14 @@
 #include <stdlib.h>
 extern "C" {
 #include "mtgp32-fast.h"
+#include "mtgp32dc-param-11213.c"
 }
-#define MEXP 23209
-#define N 726
-#define THREAD_NUM 512
+#define MEXP 11213
+#define N MTGPDC_N
+#define THREAD_NUM MTGPDC_FLOOR_2P
 #define LARGE_SIZE (THREAD_NUM * 3)
-#define BLOCK_NUM 32	     /* You can change this value up to 128 */
+//#define BLOCK_NUM 32
+#define BLOCK_NUM_MAX 200
 #define TBL_SIZE 16
 
 /**
@@ -47,12 +50,12 @@ struct mtgp32_kernel_status_t {
 /*
  * Generator Parameters.
  */
-__constant__ uint32_t param_tbl[BLOCK_NUM][TBL_SIZE];
-__constant__ uint32_t temper_tbl[BLOCK_NUM][TBL_SIZE];
-__constant__ uint32_t single_temper_tbl[BLOCK_NUM][TBL_SIZE];
-__constant__ uint32_t pos_tbl[BLOCK_NUM];
-__constant__ uint32_t sh1_tbl[BLOCK_NUM];
-__constant__ uint32_t sh2_tbl[BLOCK_NUM];
+__constant__ uint32_t param_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t single_temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t pos_tbl[BLOCK_NUM_MAX];
+__constant__ uint32_t sh1_tbl[BLOCK_NUM_MAX];
+__constant__ uint32_t sh2_tbl[BLOCK_NUM_MAX];
 /* high_mask and low_mask should be set by make_constant(), but
  * did not work.
  */
@@ -62,7 +65,7 @@ __constant__ uint32_t mask = 0xff800000;
  * Shared memory
  * The generator's internal status vector.
  */
-__shared__ uint32_t status[LARGE_SIZE]; /* 512 * 3 elements, 6144 bytes. */
+__shared__ uint32_t status[LARGE_SIZE];
 
 /**
  * The function of the recursion formula calculation.
@@ -303,9 +306,10 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
  * This function sets constants in device memory.
  * @param[in] params input, MTGP32 parameters.
  */
-void make_constant(const mtgp32_params_fast_t params[]) {
-    const int size1 = sizeof(uint32_t) * BLOCK_NUM;
-    const int size2 = sizeof(uint32_t) * BLOCK_NUM * TBL_SIZE;
+void make_constant(const mtgp32_params_fast_t params[],
+    int block_num) {
+    const int size1 = sizeof(uint32_t) * block_num;
+    const int size2 = sizeof(uint32_t) * block_num * TBL_SIZE;
     uint32_t *h_pos_tbl;
     uint32_t *h_sh1_tbl;
     uint32_t *h_sh2_tbl;
@@ -340,7 +344,7 @@ void make_constant(const mtgp32_params_fast_t params[]) {
 #if 0
     h_mask = params[0].mask;
 #endif
-    for (int i = 0; i < BLOCK_NUM; i++) {
+    for (int i = 0; i < block_num; i++) {
 	h_pos_tbl[i] = params[i].pos;
 	h_sh1_tbl[i] = params[i].sh1;
 	h_sh2_tbl[i] = params[i].sh2;
@@ -373,21 +377,23 @@ void make_constant(const mtgp32_params_fast_t params[]) {
 #endif
 }
 
+#if 0
 /**
  * This function initializes kernel I/O data.
  * @param[out] d_status output kernel I/O data.
  * @param[in] params MTGP32 parameters. needed for the initialization.
  */
 void make_kernel_data(mtgp32_kernel_status_t *d_status,
-		     mtgp32_params_fast_t params[]) {
+		      mtgp32_params_fast_t params[],
+		      int block_num) {
     mtgp32_kernel_status_t* h_status = (mtgp32_kernel_status_t *) malloc(
-	sizeof(mtgp32_kernel_status_t) * BLOCK_NUM);
+	sizeof(mtgp32_kernel_status_t) * block_num);
 
     if (h_status == NULL) {
 	printf("failure in allocating host memory for kernel I/O data.\n");
 	exit(8);
     }
-    for (int i = 0; i < BLOCK_NUM; i++) {
+    for (int i = 0; i < block_num; i++) {
 	mtgp32_init_state(&(h_status[i].status[0]), &params[i], i + 1);
     }
 #if defined(DEBUG)
@@ -398,81 +404,14 @@ void make_kernel_data(mtgp32_kernel_status_t *d_status,
 #endif
     CUDA_SAFE_CALL(cudaMemcpy(d_status,
 			      h_status,
-			      sizeof(mtgp32_kernel_status_t) * BLOCK_NUM,
+			      sizeof(mtgp32_kernel_status_t) * block_num,
 			      cudaMemcpyHostToDevice));
     free(h_status);
 }
+#endif
 
-/**
- * This function is used to compare the outputs with C program's.
- * @param[in] array data to be printed.
- * @param[in] size size of array.
- * @param[in] block number of blocks.
- */
-void print_float_array(const float array[], int size, int block) {
-    int b = size / block;
-
-    for (int j = 0; j < 5; j += 5) {
-	printf("%.10f %.10f %.10f %.10f %.10f\n",
-	       array[j], array[j + 1],
-	       array[j + 2], array[j + 3], array[j + 4]);
-    }
-    for (int i = 1; i < block; i++) {
-	for (int j = -5; j < 5; j += 5) {
-	    printf("%.10f %.10f %.10f %.10f %.10f\n",
-		   array[b * i + j],
-		   array[b * i + j + 1],
-		   array[b * i + j + 2],
-		   array[b * i + j + 3],
-		   array[b * i + j + 4]);
-	}
-    }
-    for (int j = -5; j < 0; j += 5) {
-	printf("%.10f %.10f %.10f %.10f %.10f\n",
-	       array[size + j],
-	       array[size + j + 1],
-	       array[size + j + 2],
-	       array[size + j + 3],
-	       array[size + j + 4]);
-    }
-}
-
-/**
- * This function is used to compare the outputs with C program's.
- * @param[in] array data to be printed.
- * @param[in] size size of array.
- * @param[in] block number of blocks.
- */
-void print_uint32_array(uint32_t array[], int size, int block) {
-    int b = size / block;
-
-    for (int j = 0; j < 5; j += 5) {
-	printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
-	       " %10" PRIu32 " %10" PRIu32 "\n",
-	       array[j], array[j + 1],
-	       array[j + 2], array[j + 3], array[j + 4]);
-    }
-    for (int i = 1; i < block; i++) {
-	for (int j = -5; j < 5; j += 5) {
-	    printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
-		   " %10" PRIu32 " %10" PRIu32 "\n",
-		   array[b * i + j],
-		   array[b * i + j + 1],
-		   array[b * i + j + 2],
-		   array[b * i + j + 3],
-		   array[b * i + j + 4]);
-	}
-    }
-    for (int j = -5; j < 0; j += 5) {
-	printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
-	       " %10" PRIu32 " %10" PRIu32 "\n",
-	       array[size + j],
-	       array[size + j + 1],
-	       array[size + j + 2],
-	       array[size + j + 3],
-	       array[size + j + 4]);
-    }
-}
+#include "mtgp-cuda-common.c"
+#include "mtgp32-cuda-common.c"
 
 /**
  * host function.
@@ -481,7 +420,9 @@ void print_uint32_array(uint32_t array[], int size, int block) {
  * @param[in] d_status kernel I/O data.
  * @param[in] num_data number of data to be generated.
  */
-void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
+void make_uint32_random(mtgp32_kernel_status_t* d_status,
+			int num_data,
+			int block_num) {
     uint32_t* d_data;
     unsigned int timer = 0;
     uint32_t* h_data;
@@ -503,8 +444,8 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
     }
 
     /* kernel call */
-    mtgp32_uint32_kernel<<< BLOCK_NUM, THREAD_NUM>>>(
-	d_status, d_data, num_data / BLOCK_NUM);
+    mtgp32_uint32_kernel<<< block_num, THREAD_NUM>>>(
+	d_status, d_data, num_data / block_num);
     cudaThreadSynchronize();
 
     e = cudaGetLastError();
@@ -519,7 +460,7 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
 		   sizeof(uint32_t) * num_data,
 		   cudaMemcpyDeviceToHost));
     gputime = cutGetTimerValue(timer);
-    print_uint32_array(h_data, num_data, BLOCK_NUM);
+    print_uint32_array(h_data, num_data, block_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
@@ -536,7 +477,9 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status, int num_data) {
  * @param[in] d_status kernel I/O data.
  * @param[in] num_data number of data to be generated.
  */
-void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
+void make_single_random(mtgp32_kernel_status_t* d_status,
+			int num_data,
+			int block_num) {
     uint32_t* d_data;
     unsigned int timer = 0;
     float* h_data;
@@ -558,8 +501,8 @@ void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
     }
 
     /* kernel call */
-    mtgp32_single_kernel<<< BLOCK_NUM, THREAD_NUM >>>(
-	d_status, d_data, num_data / BLOCK_NUM);
+    mtgp32_single_kernel<<< block_num, THREAD_NUM >>>(
+	d_status, d_data, num_data / block_num);
     cudaThreadSynchronize();
 
     e = cudaGetLastError();
@@ -574,7 +517,7 @@ void make_single_random(mtgp32_kernel_status_t* d_status, int num_data) {
 		   sizeof(uint32_t) * num_data,
 		   cudaMemcpyDeviceToHost));
     gputime = cutGetTimerValue(timer);
-    print_float_array(h_data, num_data, BLOCK_NUM);
+    print_float_array(h_data, num_data, block_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
@@ -588,34 +531,55 @@ int main(int argc, char** argv)
 {
     // LARGE_SIZE is a multiple of 16
     int num_data = 10000000;
-    int num_unit = LARGE_SIZE * BLOCK_NUM;
+    int block_num;
+    int num_unit;
     int r;
-    mtgp32_kernel_status_t* d_status;
+    mtgp32_kernel_status_t *d_status;
 
-    CUT_DEVICE_INIT(argc, argv);
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
-			      sizeof(mtgp32_kernel_status_t) * BLOCK_NUM));
     if (argc >= 2) {
 	errno = 0;
-	num_data = strtol(argv[1], NULL, 10);
+	block_num = strtol(argv[1], NULL, 10);
 	if (errno) {
-	    printf("%s number_of_output\n", argv[0]);
+	    printf("%s number_of_block number_of_output\n", argv[0]);
 	    return 1;
 	}
+	if (block_num < 1 || block_num > BLOCK_NUM_MAX) {
+	    printf("%s block_num should be between 1 and %d\n",
+		   argv[0], BLOCK_NUM_MAX);
+	    return 1;
+	}
+	errno = 0;
+	num_data = strtol(argv[2], NULL, 10);
+	if (errno) {
+	    printf("%s number_of_block number_of_output\n", argv[0]);
+	    return 1;
+	}
+	argc -= 2;
+	argv += 2;
     } else {
-	printf("%s number_of_output\n", argv[0]);
+	printf("%s number_of_block number_of_output\n", argv[0]);
+	printf("the suitable number of blocks will be %d\n",
+	       get_suitable_block_num(sizeof(uint32_t),
+				      THREAD_NUM,
+				      LARGE_SIZE));
 	return 1;
     }
+    CUT_DEVICE_INIT(argc, argv);
+    num_unit = LARGE_SIZE * block_num;
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
+			      sizeof(mtgp32_kernel_status_t) * block_num));
     r = num_data % num_unit;
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    make_constant(mtgp32_params_fast_23209);
-    make_kernel_data(d_status, mtgp32_params_fast_23209);
-    make_uint32_random(d_status, num_data);
-    make_single_random(d_status, num_data);
+    make_constant(MTGPDC_PARAM_TABLE, block_num);
+    make_kernel_data(d_status, MTGPDC_PARAM_TABLE, block_num);
+    make_uint32_random(d_status, num_data, block_num);
+    make_single_random(d_status, num_data, block_num);
 
     //finalize
     CUDA_SAFE_CALL(cudaFree(d_status));
+#ifdef NEED_PROMPT
     CUT_EXIT(argc, argv);
+#endif
 }

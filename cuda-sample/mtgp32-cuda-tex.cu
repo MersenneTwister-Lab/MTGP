@@ -1,4 +1,4 @@
-/*
+/**
  * Sample Program for CUDA 2.3
  * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
  *
@@ -8,7 +8,7 @@
  *
  * MTGP32-11213
  * This program generates 32-bit unsigned integers.
- * The period of generated integers is 2<sup>23209</sup>-1.
+ * The period of generated integers is 2<sup>11213</sup>-1.
  * This also generates single precision floating point numbers.
  */
 #define __STDC_FORMAT_MACROS 1
@@ -58,7 +58,7 @@ __constant__ uint32_t mask = 0xff800000;
  * Shared memory
  * The generator's internal status vector.
  */
-__shared__ uint32_t status[LARGE_SIZE]; /* 512 * 3 elements, 6144 bytes. */
+__shared__ uint32_t status[LARGE_SIZE];
 
 /**
  * The function of the recursion formula calculation.
@@ -295,38 +295,14 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
     status_write(d_status, status, bid, tid);
 }
 
-int get_suitable_block_num(int word_size) {
-    cudaDeviceProp dev;
-    CUdevice cuDevice;
-    int max_thread_dev;
-    int max_block, max_block_mem, max_block_dev;
-    int major, minor;
-
-    CUDA_SAFE_CALL(cudaGetDeviceProperties(&dev, 0));
-    cuDeviceGet(&cuDevice, 0);
-    cuDeviceComputeCapability(&major, &minor, cuDevice);
-    max_block_mem = dev.sharedMemPerBlock / (LARGE_SIZE * word_size);
-    if (major <= 1 && minor <= 1) {
-	max_thread_dev = 768;
-    } else if (major <= 1 && minor <= 3) {
-	max_thread_dev = 1024;
-    } else {
-	max_thread_dev = 1024;
-    }
-    max_block_dev = max_thread_dev / THREAD_NUM;
-    if (max_block_mem < max_block_dev) {
-	max_block = max_block_mem;
-    } else {
-	max_block = max_block_dev;
-    }
-    return max_block * dev.multiProcessorCount;
-}
+#include "mtgp-cuda-common.c"
+#include "mtgp32-cuda-common.c"
 
 /**
  * This function sets constants in device memory.
  * @param params input, MTGP32 parameters.
  */
-void make_constant(const mtgp32_params_fast_t params[],
+void make_constant_param(const mtgp32_params_fast_t params[],
 		   int block_num) {
     const int size1 = sizeof(uint32_t) * block_num;
     uint32_t *h_pos_tbl;
@@ -420,108 +396,6 @@ void make_texture(const mtgp32_params_fast_t params[],
     free(h_texture_tbl[0]);
     free(h_texture_tbl[1]);
     free(h_texture_tbl[2]);
-}
-
-/**
- * This function initializes kernel I/O data.
- * @param d_status output kernel I/O data.
- * @param params MTGP32 parameters. needed for the initialization.
- */
-void make_kernel_data(mtgp32_kernel_status_t *d_status,
-		      mtgp32_params_fast_t params[],
-		      int block_num) {
-    mtgp32_kernel_status_t* h_status = (mtgp32_kernel_status_t *) malloc(
-	sizeof(mtgp32_kernel_status_t) * block_num);
-
-    if (h_status == NULL) {
-	printf("failure in allocating host memory for kernel I/O data.\n");
-	exit(8);
-    }
-    for (int i = 0; i < block_num; i++) {
-	mtgp32_init_state(&(h_status[i].status[0]), &params[i], i + 1);
-    }
-#if defined(DEBUG)
-    printf("h_status[0].status[0]:%08"PRIx32"\n", h_status[0].status[0]);
-    printf("h_status[0].status[1]:%08"PRIx32"\n", h_status[0].status[1]);
-    printf("h_status[0].status[2]:%08"PRIx32"\n", h_status[0].status[2]);
-    printf("h_status[0].status[3]:%08"PRIx32"\n", h_status[0].status[3]);
-#endif
-    CUDA_SAFE_CALL(cudaMemcpy(d_status,
-			      h_status,
-			      sizeof(mtgp32_kernel_status_t) * block_num,
-			      cudaMemcpyHostToDevice));
-    free(h_status);
-}
-
-/**
- * This function is used to compare the outputs with C program's.
- * @param array data to be printed.
- * @param size size of array.
- * @param block number of blocks.
- */
-void print_float_array(const float array[], int size, int block) {
-    int b = size / block;
-
-    for (int j = 0; j < 5; j += 5) {
-	printf("%.10f %.10f %.10f %.10f %.10f\n",
-	       array[j], array[j + 1],
-	       array[j + 2], array[j + 3], array[j + 4]);
-    }
-    for (int i = 1; i < block; i++) {
-	for (int j = -5; j < 5; j += 5) {
-	    printf("%.10f %.10f %.10f %.10f %.10f\n",
-		   array[b * i + j],
-		   array[b * i + j + 1],
-		   array[b * i + j + 2],
-		   array[b * i + j + 3],
-		   array[b * i + j + 4]);
-	}
-    }
-    for (int j = -5; j < 0; j += 5) {
-	printf("%.10f %.10f %.10f %.10f %.10f\n",
-	       array[size + j],
-	       array[size + j + 1],
-	       array[size + j + 2],
-	       array[size + j + 3],
-	       array[size + j + 4]);
-    }
-}
-
-/**
- * This function is used to compare the outputs with C program's.
- * @param array data to be printed.
- * @param size size of array.
- * @param block number of blocks.
- */
-void print_uint32_array(uint32_t array[], int size, int block) {
-    int b = size / block;
-
-    for (int j = 0; j < 5; j += 5) {
-	printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
-	       " %10" PRIu32 " %10" PRIu32 "\n",
-	       array[j], array[j + 1],
-	       array[j + 2], array[j + 3], array[j + 4]);
-    }
-    for (int i = 1; i < block; i++) {
-	for (int j = -5; j < 5; j += 5) {
-	    printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
-		   " %10" PRIu32 " %10" PRIu32 "\n",
-		   array[b * i + j],
-		   array[b * i + j + 1],
-		   array[b * i + j + 2],
-		   array[b * i + j + 3],
-		   array[b * i + j + 4]);
-	}
-    }
-    for (int j = -5; j < 0; j += 5) {
-	printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
-	       " %10" PRIu32 " %10" PRIu32 "\n",
-	       array[size + j],
-	       array[size + j + 1],
-	       array[size + j + 2],
-	       array[size + j + 3],
-	       array[size + j + 4]);
-    }
 }
 
 /**
@@ -671,7 +545,9 @@ int main(int argc, char *argv[])
     } else {
 	printf("%s number_of_block number_of_output\n", argv[0]);
 	printf("the suitable number of blocks will be %d\n",
-	       get_suitable_block_num(sizeof(uint32_t)));
+	       get_suitable_block_num(sizeof(uint32_t),
+				      THREAD_NUM,
+				      LARGE_SIZE));
 	return 1;
     }
     CUT_DEVICE_INIT(argc, argv);
@@ -689,9 +565,9 @@ int main(int argc, char *argv[])
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    make_constant(mtgp32dc_params_fast_11213, block_num);
-    make_texture(mtgp32dc_params_fast_11213, d_texture, block_num);
-    make_kernel_data(d_status, mtgp32dc_params_fast_11213, block_num);
+    make_constant_param(MTGPDC_PARAM_TABLE, block_num);
+    make_texture(MTGPDC_PARAM_TABLE, d_texture, block_num);
+    make_kernel_data(d_status, MTGPDC_PARAM_TABLE, block_num);
     make_uint32_random(d_status, num_data, block_num);
     make_single_random(d_status, num_data, block_num);
 
@@ -700,5 +576,7 @@ int main(int argc, char *argv[])
     CUDA_SAFE_CALL(cudaFree(d_texture[0]));
     CUDA_SAFE_CALL(cudaFree(d_texture[1]));
     CUDA_SAFE_CALL(cudaFree(d_texture[2]));
+#ifdef NEED_PROMPT
     CUT_EXIT(argc, argv);
+#endif
 }
