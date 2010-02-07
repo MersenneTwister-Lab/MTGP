@@ -18,9 +18,15 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 
 STD = -std=c99
 CC = gcc
-NVCC = nvcc -I../
-CUTILINC = -I$(HOME)/NVIDIA_GPU_Computing_SDK/C/common/inc
+NVCC = nvcc
+
+# for OS X
+#CUTILINC = -I"/Developer/GPU Computing/C/common/inc" -I../
+#CUTILLIB = -L"/Developer/GPU Computing/C/lib" -lcutil_i386
+# for linux
+CUTILINC = -I$(HOME)/NVIDIA_GPU_Computing_SDK/C/common/inc -I../
 CUTILLIB = -L$(HOME)/NVIDIA_GPU_Computing_SDK/C/lib -lcutil
+
 CUDALINK = -lcuda
 CPP = g++
 CPPFLAGS = -Wall -Wextra -O3

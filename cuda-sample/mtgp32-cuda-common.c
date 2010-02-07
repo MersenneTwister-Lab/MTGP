@@ -11,8 +11,6 @@
  * The period of generated integers is 2<sup>23209</sup>-1.
  * This also generates single precision floating point numbers.
  */
-#define __STDC_FORMAT_MACROS 1
-#define __STDC_CONSTANT_MACROS 1
 #include <stdio.h>
 #include <cuda.h>
 #include <cutil.h>

@@ -22,10 +22,6 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 #STD = -std=c99 -pedantic
 STD = -std=c99
 CC = gcc
-NVCC = nvcc
-CUTILINC = -I$(HOME)/NVIDIA_GPU_Computing_SDK/C/common/inc
-CUTILLIB = -L$(HOME)/NVIDIA_GPU_Computing_SDK/C/lib -lcutil
-CUDALINK = -lcuda
 CPP = g++
 CPPFLAGS = -Wall -Wextra -O3 -msse3
 CCFLAGS = $(OPTI) $(WARN) $(STD) $(DEBUG)
@@ -75,34 +71,6 @@ test32-ref: mtgp32-ref.h mtgp32-ref.c mtgp32-param-ref.o
 
 test32-fast: mtgp32-fast.h mtgp32-fast.c mtgp32-param-fast.o
 	${CC} ${CCFLAGS} -DMAIN=1 -o $@ mtgp32-fast.c mtgp32-param-fast.o
-
-test32-cuda: mtgp32-cuda.cu mtgp32-fast.h mtgp32-param-fast.o mtgp32-fast.o
-	${NVCC} -o $@ mtgp32-cuda.cu mtgp32-param-fast.o mtgp32-fast.o \
-	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
-
-test32-cuda-tex: mtgp32-cuda-tex.cu mtgp32-fast.h mtgp32dc-param-11213.c \
-	mtgp32-fast.o
-	${NVCC} -o $@ mtgp32-cuda-tex.cu mtgp32-fast.o \
-	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
-
-test32-cuda256-tex: mtgp32-cuda256-tex.cu mtgp32-fast.h mtgp32-param-fast.o \
-	mtgp32-fast.o
-	${NVCC} -o $@ mtgp32-cuda256-tex.cu mtgp32-param-fast.o mtgp32-fast.o \
-	 ${CUTILINC} ${CUTILLIB} ${C	UDALINK}
-
-test64-cuda: mtgp64-cuda.cu mtgp64-fast.h mtgp64-param-fast.o mtgp64-fast.o
-	${NVCC} -o $@ mtgp64-cuda.cu mtgp64-param-fast.o mtgp64-fast.o \
-	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
-
-test64-cuda-tex: mtgp64-cuda-tex.cu mtgp64-fast.h mtgp64-param-fast.o \
-	mtgp64-fast.o
-	${NVCC} -o $@ mtgp64-cuda-tex.cu mtgp64-param-fast.o mtgp64-fast.o \
-	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
-
-test64-cuda11213-tex: mtgp64-cuda11213-tex.cu mtgp64-fast.h \
-	mtgp64dc-param-11213.c  mtgp64-fast.o
-	${NVCC} -o $@ mtgp64-cuda11213-tex.cu mtgp64-fast.o \
-	${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
 .c.o:
 	${CC} ${CCFLAGS} -c $<

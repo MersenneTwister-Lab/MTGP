@@ -557,11 +557,17 @@ int main(int argc, char** argv)
 	argc -= 2;
 	argv += 2;
     } else {
+	CUT_DEVICE_INIT(argc, argv);
 	printf("%s number_of_block number_of_output\n", argv[0]);
-	printf("the suitable number of blocks will be %d\n",
-	       get_suitable_block_num(sizeof(uint32_t),
-				      THREAD_NUM,
-				      LARGE_SIZE));
+	block_num = get_suitable_block_num(sizeof(uint32_t),
+					   THREAD_NUM,
+					   LARGE_SIZE);
+	if (block_num <= 0) {
+	    printf("can't calculate sutable number of blocks.\n");
+	    return 1;
+	}
+	printf("the suitable number of blocks for device 0 "
+	       "will be multiple of %d\n", block_num);
 	return 1;
     }
     CUT_DEVICE_INIT(argc, argv);

@@ -11,22 +11,19 @@ FILES = LICENSE.txt \
 	mtgp64-ref.c \
 	mtgp64-fast.h \
 	mtgp64-fast.c \
-	mtgp64-cuda.cu \
-	mtgp64-cuda-tex.cu \
 	mtgp64-param-ref.c \
 	mtgp64-param-fast.c \
 	mtgp32-ref.h \
 	mtgp32-ref.c \
 	mtgp32-fast.h \
 	mtgp32-fast.c \
-	mtgp32-cuda.cu \
-	mtgp32-cuda-tex.cu \
 	mtgp32-param-ref.c \
 	mtgp32-param-fast.c \
 	Makefile \
 	tools \
+	cuda-sample \
 	html
-VERSION = 1.0.1
+VERSION = 1.0.2
 DIR = MTGP-src-${VERSION}
 
 doc:
@@ -44,7 +41,8 @@ tar.gz: $(FILES)
 zip: $(FILES)
 	mkdir ${DIR}
 	cp -r ${FILES} ${DIR}
-	zip ${DIR}.zip ${DIR}/* ${DIR}/html/* ${DIR}/tools/*
+	zip ${DIR}.zip ${DIR}/* ${DIR}/html/* ${DIR}/tools/* \
+		${DIR}/cuda-sample/*
 	rm -rf ${DIR}
 
 clean:

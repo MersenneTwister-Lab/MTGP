@@ -20,15 +20,19 @@ int get_suitable_block_num(int word_size, int thread_num, int large_size) {
     CUdevice cuDevice;
     int max_thread_dev;
     int max_block, max_block_mem, max_block_dev;
-    int major, minor;
+    int major, minor, ver
 
     CUDA_SAFE_CALL(cudaGetDeviceProperties(&dev, 0));
     cuDeviceGet(&cuDevice, 0);
     cuDeviceComputeCapability(&major, &minor, cuDevice);
     max_block_mem = dev.sharedMemPerBlock / (large_size * word_size);
-    if (major <= 1 && minor <= 1) {
+    if (major == 9999 && minor == 9999) {
+	return -1;
+    }
+    ver = major * 100 + minor
+    if (ver <= 101) {
 	max_thread_dev = 768;
-    } else if (major <= 1 && minor <= 3) {
+    } else if (ver <= 103) {
 	max_thread_dev = 1024;
     } else {
 	max_thread_dev = 1024;
