@@ -655,7 +655,7 @@ int main(int argc, char** argv)
     } else {
 	CUT_DEVICE_INIT(argc, argv);
 	printf("%s number_of_block number_of_output\n", argv[0]);
-	block_num = get_suitable_block_num(sizeof(uint32_t),
+	block_num = get_suitable_block_num(sizeof(uint64_t),
 					   THREAD_NUM,
 					   LARGE_SIZE);
 	if (block_num <= 0) {

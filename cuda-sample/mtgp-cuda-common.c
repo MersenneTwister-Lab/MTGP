@@ -11,16 +11,13 @@
  * The period of generated integers is 2<sup>23209</sup>-1.
  * This also generates single precision floating point numbers.
  */
-#include <cuda.h>
-#include <cutil.h>
-#include <stdint.h>
 
 int get_suitable_block_num(int word_size, int thread_num, int large_size) {
     cudaDeviceProp dev;
     CUdevice cuDevice;
     int max_thread_dev;
     int max_block, max_block_mem, max_block_dev;
-    int major, minor, ver
+    int major, minor, ver;
 
     CUDA_SAFE_CALL(cudaGetDeviceProperties(&dev, 0));
     cuDeviceGet(&cuDevice, 0);
@@ -29,7 +26,7 @@ int get_suitable_block_num(int word_size, int thread_num, int large_size) {
     if (major == 9999 && minor == 9999) {
 	return -1;
     }
-    ver = major * 100 + minor
+    ver = major * 100 + minor;
     if (ver <= 101) {
 	max_thread_dev = 768;
     } else if (ver <= 103) {

@@ -377,39 +377,6 @@ void make_constant(const mtgp32_params_fast_t params[],
 #endif
 }
 
-#if 0
-/**
- * This function initializes kernel I/O data.
- * @param[out] d_status output kernel I/O data.
- * @param[in] params MTGP32 parameters. needed for the initialization.
- */
-void make_kernel_data(mtgp32_kernel_status_t *d_status,
-		      mtgp32_params_fast_t params[],
-		      int block_num) {
-    mtgp32_kernel_status_t* h_status = (mtgp32_kernel_status_t *) malloc(
-	sizeof(mtgp32_kernel_status_t) * block_num);
-
-    if (h_status == NULL) {
-	printf("failure in allocating host memory for kernel I/O data.\n");
-	exit(8);
-    }
-    for (int i = 0; i < block_num; i++) {
-	mtgp32_init_state(&(h_status[i].status[0]), &params[i], i + 1);
-    }
-#if defined(DEBUG)
-    printf("h_status[0].status[0]:%08"PRIx32"\n", h_status[0].status[0]);
-    printf("h_status[0].status[1]:%08"PRIx32"\n", h_status[0].status[1]);
-    printf("h_status[0].status[2]:%08"PRIx32"\n", h_status[0].status[2]);
-    printf("h_status[0].status[3]:%08"PRIx32"\n", h_status[0].status[3]);
-#endif
-    CUDA_SAFE_CALL(cudaMemcpy(d_status,
-			      h_status,
-			      sizeof(mtgp32_kernel_status_t) * block_num,
-			      cudaMemcpyHostToDevice));
-    free(h_status);
-}
-#endif
-
 #include "mtgp-cuda-common.c"
 #include "mtgp32-cuda-common.c"
 
