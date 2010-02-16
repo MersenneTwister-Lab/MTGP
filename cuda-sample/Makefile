@@ -32,6 +32,8 @@ CPP = g++
 CPPFLAGS = -Wall -Wextra -O3
 CCFLAGS = $(OPTI) $(WARN) $(STD) $(DEBUG)
 
+samples:sample32-cuda sample32-cuda-tex sample64-cuda sample64-cuda-tex
+
 sample32-cuda: mtgp32-cuda.cu ../mtgp32-fast.h mtgp32dc-param-11213.c \
 	../mtgp32-fast.o mtgp32-cuda-common.c mtgp-cuda-common.c
 	${NVCC} -o $@ mtgp32-cuda.cu ../mtgp32-fast.o \
@@ -40,6 +42,13 @@ sample32-cuda: mtgp32-cuda.cu ../mtgp32-fast.h mtgp32dc-param-11213.c \
 sample32-cuda-tex: mtgp32-cuda-tex.cu ../mtgp32-fast.h mtgp32dc-param-11213.c \
 	../mtgp32-fast.o mtgp32-cuda-common.c mtgp-cuda-common.c
 	${NVCC} -o $@ mtgp32-cuda-tex.cu ../mtgp32-fast.o \
+	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
+
+sample32-cuda23209-tex: mtgp32-cuda23209-tex.cu ../mtgp32-fast.h \
+	../mtgp32-param-fast.c \
+	../mtgp32-fast.o mtgp32-cuda-common.c mtgp-cuda-common.c
+	${NVCC} -o $@ mtgp32-cuda-tex.cu ../mtgp32-fast.o \
+	../mtgp32-param-fast.o \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
 sample64-cuda: mtgp64-cuda.cu ../mtgp64-fast.h mtgp64dc-param-11213.c \
