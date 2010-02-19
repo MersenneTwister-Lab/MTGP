@@ -1,3 +1,7 @@
+/**
+ * This program uses NTL:
+ * http://shoup.net/ntl/
+ */
 #include <string>
 #include <iostream>
 #include <sstream>
