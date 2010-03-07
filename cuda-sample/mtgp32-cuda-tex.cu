@@ -100,13 +100,14 @@ __device__ uint32_t temper(uint32_t V, uint32_t T, int bid) {
  * The tempering and converting function.
  * By using the preset-ted table, converting to IEEE format
  * and tempering are done simultaneously.
+ * Resulted outputs are distributed in the range [1, 2).
  *
  * @param[in] V the output value should be tempered.
  * @param[in] T the tempering helper value.
  * @param[in] bid block id.
  * @return the tempered and converted value.
  */
-__device__ uint32_t temper_single(uint32_t V, uint32_t T, int bid) {
+__device__ float temper_single(uint32_t V, uint32_t T, int bid) {
     uint32_t MAT;
     uint32_t r;
 
@@ -114,7 +115,29 @@ __device__ uint32_t temper_single(uint32_t V, uint32_t T, int bid) {
     T ^= T >> 8;
     MAT = tex1Dfetch(tex_single_ref, bid * 16 + (T & 0x0f));
     r = (V >> 9) ^ MAT;
-    return r;
+    return __int_as_float(r);
+}
+
+/**
+ * The tempering and converting function.
+ * By using the preset-ted table, converting to IEEE format
+ * and tempering are done simultaneously.
+ * Resulted outputs are distributed in the range [0, 1).
+ *
+ * @param[in] V the output value should be tempered.
+ * @param[in] T the tempering helper value.
+ * @param[in] bid block id.
+ * @return the tempered and converted value.
+ */
+__device__ float temper_single01(uint32_t V, uint32_t T, int bid) {
+    uint32_t MAT;
+    uint32_t r;
+
+    T ^= T >> 16;
+    T ^= T >> 8;
+    MAT = tex1Dfetch(tex_single_ref, bid * 16 + (T & 0x0f));
+    r = (V >> 9) ^ MAT;
+    return __int_as_float(r) - 1.0f;
 }
 
 /**
@@ -247,14 +270,14 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
  * @params[in] size number of output data requested.
  */
 __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
-				     uint32_t* d_data, int size)
+				     float* d_data, int size)
 {
 
     const int bid = blockIdx.x;
     const int tid = threadIdx.x;
     int pos = pos_tbl[bid];
     uint32_t r;
-    uint32_t o;
+    float o;
 
     // copy status data from global memory to shared memory.
     status_read(status, d_status, bid, tid);
@@ -286,6 +309,63 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
 		     bid);
 	status[tid + 2 * THREAD_NUM] = r;
 	o = temper_single(r,
+			  status[tid + pos - 1 + 2 * THREAD_NUM - N],
+			  bid);
+	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
+	__syncthreads();
+    }
+    // write back status for next call
+    status_write(d_status, status, bid, tid);
+}
+
+/**
+ * kernel function.
+ * This function generates single precision floating point numbers in d_data.
+ *
+ * @params[in,out] d_status kernel I/O data
+ * @params[out] d_data output. IEEE single precision format.
+ * @params[in] size number of output data requested.
+ */
+__global__ void mtgp32_single01_kernel(mtgp32_kernel_status_t* d_status,
+				       float* d_data, int size)
+{
+
+    const int bid = blockIdx.x;
+    const int tid = threadIdx.x;
+    int pos = pos_tbl[bid];
+    uint32_t r;
+    float o;
+
+    // copy status data from global memory to shared memory.
+    status_read(status, d_status, bid, tid);
+
+    // main loop
+    for (int i = 0; i < size; i += LARGE_SIZE) {
+	r = para_rec(status[LARGE_SIZE - N + tid],
+		     status[LARGE_SIZE - N + tid + 1],
+		     status[LARGE_SIZE - N + tid + pos],
+		     bid);
+	status[tid] = r;
+	o = temper_single01(r, status[LARGE_SIZE - N + tid + pos - 1], bid);
+	d_data[size * bid + i + tid] = o;
+	__syncthreads();
+	r = para_rec(status[(4 * THREAD_NUM - N + tid) % LARGE_SIZE],
+		     status[(4 * THREAD_NUM - N + tid + 1) % LARGE_SIZE],
+		     status[(4 * THREAD_NUM - N + tid + pos) % LARGE_SIZE],
+		     bid);
+	status[tid + THREAD_NUM] = r;
+	o = temper_single01(
+	    r,
+	    status[(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
+	    bid);
+	d_data[size * bid + THREAD_NUM + i + tid] = o;
+	__syncthreads();
+	r = para_rec(status[2 * THREAD_NUM - N + tid],
+		     status[2 * THREAD_NUM - N + tid + 1],
+		     status[2 * THREAD_NUM - N + tid + pos],
+		     bid);
+	status[tid + 2 * THREAD_NUM] = r;
+	o = temper_single01(r,
 			  status[tid + pos - 1 + 2 * THREAD_NUM - N],
 			  bid);
 	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
@@ -465,14 +545,14 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status,
 void make_single_random(mtgp32_kernel_status_t* d_status,
 			int num_data,
 			int block_num) {
-    uint32_t* d_data;
+    float* d_data;
     unsigned int timer = 0;
     float* h_data;
     cudaError_t e;
     float gputime;
 
     printf("generating single precision floating point random numbers.\n");
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_data, sizeof(uint32_t) * num_data));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_data, sizeof(float) * num_data));
     CUT_SAFE_CALL(cutCreateTimer(&timer));
     h_data = (float *) malloc(sizeof(float) * num_data);
     if (h_data == NULL) {
@@ -487,6 +567,63 @@ void make_single_random(mtgp32_kernel_status_t* d_status,
 
     /* kernel call */
     mtgp32_single_kernel<<< block_num, THREAD_NUM >>>(
+	d_status, d_data, num_data / block_num);
+    cudaThreadSynchronize();
+
+    e = cudaGetLastError();
+    if (e != cudaSuccess) {
+	printf("failure in kernel call.\n%s\n", cudaGetErrorString(e));
+	exit(1);
+    }
+    CUT_SAFE_CALL(cutStopTimer(timer));
+    CUDA_SAFE_CALL(
+	cudaMemcpy(h_data,
+		   d_data,
+		   sizeof(uint32_t) * num_data,
+		   cudaMemcpyDeviceToHost));
+    gputime = cutGetTimerValue(timer);
+    print_float_array(h_data, num_data, block_num);
+    printf("generated numbers: %d\n", num_data);
+    printf("Processing time: %f (ms)\n", gputime);
+    printf("Samples per second: %E \n", num_data / (gputime * 0.001));
+    CUT_SAFE_CALL(cutDeleteTimer(timer));
+    //free memories
+    free(h_data);
+    CUDA_SAFE_CALL(cudaFree(d_data));
+}
+
+/**
+ * host function.
+ * This function calls corresponding kernel function.
+ *
+ * @param d_status kernel I/O data.
+ * @param num_data number of data to be generated.
+ */
+void make_single01_random(mtgp32_kernel_status_t* d_status,
+			  int num_data,
+			  int block_num) {
+    float* d_data;
+    unsigned int timer = 0;
+    float* h_data;
+    cudaError_t e;
+    float gputime;
+
+    printf("generating single precision floating point random numbers.\n");
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_data, sizeof(float) * num_data));
+    CUT_SAFE_CALL(cutCreateTimer(&timer));
+    h_data = (float *) malloc(sizeof(float) * num_data);
+    if (h_data == NULL) {
+	printf("failure in allocating host memory for output data.\n");
+	exit(1);
+    }
+    CUT_SAFE_CALL(cutStartTimer(timer));
+    if (cudaGetLastError() != cudaSuccess) {
+	printf("error has been occured before kernel call.\n");
+	exit(1);
+    }
+
+    /* kernel call */
+    mtgp32_single01_kernel<<< block_num, THREAD_NUM >>>(
 	d_status, d_data, num_data / block_num);
     cudaThreadSynchronize();
 
@@ -576,6 +713,7 @@ int main(int argc, char *argv[])
     make_kernel_data(d_status, MTGPDC_PARAM_TABLE, block_num);
     make_uint32_random(d_status, num_data, block_num);
     make_single_random(d_status, num_data, block_num);
+    make_single01_random(d_status, num_data, block_num);
 
     //finalize
     CUDA_SAFE_CALL(cudaFree(d_status));

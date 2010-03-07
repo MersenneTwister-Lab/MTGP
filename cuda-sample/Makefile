@@ -18,7 +18,7 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 
 STD = -std=c99
 CC = gcc
-NVCC = nvcc
+NVCC = nvcc #--compiler-options '-Wall'
 
 # for OS X
 #CUTILINC = -I"/Developer/GPU Computing/C/common/inc" -I../
@@ -32,7 +32,8 @@ CPP = g++
 CPPFLAGS = -Wall -Wextra -O3
 CCFLAGS = $(OPTI) $(WARN) $(STD) $(DEBUG)
 
-samples:sample32-cuda sample32-cuda-tex sample64-cuda sample64-cuda-tex
+samples:sample32-cuda sample32-cuda-tex sample64-cuda sample64-cuda-tex \
+	sample64-cuda13-tex
 
 sample32-cuda: mtgp32-cuda.cu ../mtgp32-fast.h mtgp32dc-param-11213.c \
 	../mtgp32-fast.o mtgp32-cuda-common.c mtgp-cuda-common.c
@@ -59,6 +60,12 @@ sample64-cuda: mtgp64-cuda.cu ../mtgp64-fast.h mtgp64dc-param-11213.c \
 sample64-cuda-tex: mtgp64-cuda-tex.cu ../mtgp64-fast.h mtgp64dc-param-11213.c \
 	../mtgp64-fast.o mtgp64-cuda-common.c mtgp-cuda-common.c
 	${NVCC} -o $@ mtgp64-cuda-tex.cu ../mtgp64-fast.o \
+	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
+
+sample64-cuda13-tex: mtgp64-cuda13-tex.cu \
+	../mtgp64-fast.h mtgp64dc-param-11213.c \
+	../mtgp64-fast.o mtgp64-cuda-common.c mtgp-cuda-common.c
+	${NVCC} -arch=compute_13 -o $@ mtgp64-cuda13-tex.cu ../mtgp64-fast.o \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
 .c.o:
