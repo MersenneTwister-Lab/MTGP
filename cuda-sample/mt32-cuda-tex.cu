@@ -21,10 +21,11 @@
 #include <errno.h>
 #include <stdlib.h>
 extern "C" {
-#include "mt32dc_param521.c"
+#include "mt32dc-params521.c"
 }
 #define MEXP 521
 #define BLOCK_NUM_MAX 200
+#define TOTAL_THREAD_MAX 8000
 
 __constant__ uint32_t maskB[TOTAL_THREAD_MAX];
 __constant__ uint32_t maskC[TOTAL_THREAD_MAX];
@@ -52,7 +53,7 @@ __device__ uint32_t para_rec(uint32_t X1, uint32_t X2, uint32_t Y,
 			     uint32_t mat[2]) {
     uint32_t X = (X1 & MTDC_UPPER_MASK) | (X2 & MTDC_LOWER_MASK);
 
-    X = (X >> 1) ^ Y ^ mat[x & 1];
+    X = (X >> 1) ^ Y ^ mat[X & 1];
     return X;
 }
 
@@ -66,10 +67,10 @@ __device__ uint32_t para_rec(uint32_t X1, uint32_t X2, uint32_t Y,
  */
 __device__ uint32_t temper(uint32_t x,  uint32_t maskB, uint32_t maskC) {
 
-    x ^= x >> SHIFT0;
-    x ^= (x << SHIFTB) & maskB;
-    x ^= (x << SHIFTC) & maskC;
-    x ^= x >> SHIFT1;
+    x ^= x >> MTDC_SHIFT0;
+    x ^= (x << MTDC_SHIFTB) & maskB;
+    x ^= (x << MTDC_SHIFTC) & maskC;
+    x ^= x >> MTDC_SHIFT1;
     return x;
 }
 
@@ -83,11 +84,11 @@ __device__ uint32_t temper(uint32_t x,  uint32_t maskB, uint32_t maskC) {
  * @param[in] tid thread id
  */
 __device__ void status_read(uint32_t status[MTDC_N],
-			    const mtgp32_kernel_status_t *d_status,
+			    const mt32_kernel_status_t *d_status,
 			    int total_id) {
     int i;
     for (i = 0; i < MTDC_N; i++) {
-	status[i] = d_status[total_id][i];
+	status[i] = d_status[total_id].status[i];
     }
 }
 
@@ -100,12 +101,12 @@ __device__ void status_read(uint32_t status[MTDC_N],
  * @param[in] bid block id
  * @param[in] tid thread id
  */
-__device__ void status_write(mtgp32_kernel_status_t *d_status,
-			     const uint32_t status[LARGE_SIZE],
+__device__ void status_write(mt32_kernel_status_t *d_status,
+			     const uint32_t status[],
 			     int total_id) {
     int i;
     for (i = 0; i < MTDC_N; i++) {
-	d_status[total_id][i] = status[i];
+	d_status[total_id].status[i] = status[i];
     }
 }
 
@@ -117,16 +118,15 @@ __device__ void status_write(mtgp32_kernel_status_t *d_status,
  * @params[out] d_data output
  * @params[in] size number of output data requested.
  */
-__global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
-				     uint32_t* d_data, int size) {
-    const int bid = blockIdx.x;
-    const int tid = threadIdx.x;
+__global__ void mt32_uint32_kernel(mt32_kernel_status_t* d_status,
+				   uint32_t* d_data, int size) {
     const int total_id = blockIdx.x * blockDim.x + threadIdx.x;
     uint32_t mat[2];
     uint32_t r;
     uint32_t o;
     mat[0] = 0;
     mat[1] = tex1Dfetch(tex_param_ref, total_id);
+    uint32_t status[MTDC_N];
 
     // copy status data from global memory to shared memory.
     status_read(status, d_status, total_id);
@@ -162,6 +162,43 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
 
 #include "mtgp-cuda-common.c"
 
+/**
+ * This function is used to compare the outputs with C program's.
+ * @param array data to be printed.
+ * @param size size of array.
+ * @param block number of blocks.
+ */
+void print_uint32_array(uint32_t array[], int size, int total_thread) {
+    int b = size / total_thread;
+
+    for (int j = 0; j < 5; j += 5) {
+	printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
+	       " %10" PRIu32 " %10" PRIu32 "\n",
+	       array[j], array[j + 1],
+	       array[j + 2], array[j + 3], array[j + 4]);
+    }
+    for (int i = 1; i < total_thread; i++) {
+	for (int j = -5; j < 5; j += 5) {
+	    printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
+		   " %10" PRIu32 " %10" PRIu32 "\n",
+		   array[b * i + j],
+		   array[b * i + j + 1],
+		   array[b * i + j + 2],
+		   array[b * i + j + 3],
+		   array[b * i + j + 4]);
+	}
+    }
+    for (int j = -5; j < 0; j += 5) {
+	printf("%10" PRIu32 " %10" PRIu32 " %10" PRIu32
+	       " %10" PRIu32 " %10" PRIu32 "\n",
+	       array[size + j],
+	       array[size + j + 1],
+	       array[size + j + 2],
+	       array[size + j + 3],
+	       array[size + j + 4]);
+    }
+}
+
 void mt32_init_state(uint32_t status[0], uint32_t seed) {
     int i;
     for (i = 0; i < MTDC_N; i++) {
@@ -179,14 +216,14 @@ void init_kernel_data(mt32_kernel_status_t *d_status,
 		      mt32_params_t params[],
 		      int total_thread_num) {
     mt32_kernel_status_t* h_status = (mt32_kernel_status_t *) malloc(
-	sizeof(mtgp32_kernel_status_t) * total_thread);
+	sizeof(mt32_kernel_status_t) * total_thread_num);
 
     if (h_status == NULL) {
 	printf("failure in allocating host memory for kernel I/O data.\n");
 	exit(8);
     }
     for (int i = 0; i < total_thread_num; i++) {
-	mt32_init_state(&(h_status[i].status[0]), &params[i], i + 1);
+	mt32_init_state(&(h_status[i].status[0]), i + 1);
     }
     CUDA_SAFE_CALL(cudaMemcpy(d_status,
 			      h_status,
@@ -232,19 +269,19 @@ void make_texture(const mt32_params_t params[],
 		  int total_thread_num) {
     const int size = sizeof(uint32_t) * total_thread_num;
     uint32_t *h_texture_tbl;
-    int i, j;
+
     h_texture_tbl = (uint32_t *)malloc(size);
     if (h_texture_tbl == NULL) {
 	printf("failure in allocating host memory for constant table.\n");
 	exit(1);
     }
-    for (int i = 0; i < block_num; i++) {
+    for (int i = 0; i < total_thread_num; i++) {
 	h_texture_tbl[i] = params[i].mat_a;
     }
     CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl, h_texture_tbl, size,
 			      cudaMemcpyHostToDevice));
     tex_param_ref.filterMode = cudaFilterModePoint;
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl[0], size));
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl, size));
     free(h_texture_tbl);
 }
 
@@ -257,7 +294,7 @@ void make_texture(const mt32_params_t params[],
  */
 void make_uint32_random(mt32_kernel_status_t* d_status,
 			int num_data,
-			int block_num) {
+			int total_thread_num) {
     uint32_t* d_data;
     unsigned int timer = 0;
     uint32_t* h_data;
@@ -279,8 +316,8 @@ void make_uint32_random(mt32_kernel_status_t* d_status,
     }
 
     /* kernel call */
-    mtgp32_uint32_kernel<<< block_num, THREAD_NUM>>>(
-	d_status, d_data, num_data / block_num);
+    mt32_uint32_kernel<<< total_thread_num / 256, 256 >>>(
+	d_status, d_data, num_data / total_thread_num);
     cudaThreadSynchronize();
 
     e = cudaGetLastError();
@@ -295,7 +332,7 @@ void make_uint32_random(mt32_kernel_status_t* d_status,
 		   sizeof(uint32_t) * num_data,
 		   cudaMemcpyDeviceToHost));
     gputime = cutGetTimerValue(timer);
-    print_uint32_array(h_data, num_data, block_num);
+    print_uint32_array(h_data, num_data, total_thread_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
@@ -312,8 +349,9 @@ int main(int argc, char *argv[])
     int block_num;
     int num_unit;
     int r;
-    mtgp32_kernel_status_t *d_status;
-    uint32_t *d_texture[3];
+    int total_thread_num;
+    mt32_kernel_status_t *d_status;
+    uint32_t *d_texture;
 
     if (argc >= 2) {
 	errno = 0;
@@ -339,8 +377,8 @@ int main(int argc, char *argv[])
 	CUT_DEVICE_INIT(argc, argv);
 	printf("%s number_of_block number_of_output\n", argv[0]);
 	block_num = get_suitable_block_num(sizeof(uint32_t),
-					   THREAD_NUM,
-					   LARGE_SIZE);
+					   256,
+					   MTDC_N);
 	if (block_num <= 0) {
 	    printf("can't calculate sutable number of blocks.\n");
 	    return 1;
@@ -351,7 +389,8 @@ int main(int argc, char *argv[])
     }
     CUT_DEVICE_INIT(argc, argv);
 
-    num_unit = block_num * THREAD_NUM * MTDC_N;
+    total_thread_num = block_num * 256;
+    num_unit = total_thread_num * 256 * MTDC_N;
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
 			      sizeof(mt32_kernel_status_t) * total_thread_num));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture,
@@ -360,10 +399,10 @@ int main(int argc, char *argv[])
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    make_constant_param(MTGPDC_PARAM_TABLE, block_num * THREAD_NUM);
-    make_texture(MTGPDC_PARAM_TABLE, d_texture, block_num * THREAD_NUM);
-    init_kernel_data(d_status, MTDC_PARAM_TABLE, block_num * THREAD_NUM);
-    make_uint32_random(d_status, num_data, block_num * THREAD_NUM);
+    make_constant_param(MTDC_PARAM_TABLE, total_thread_num);
+    make_texture(MTDC_PARAM_TABLE, d_texture, total_thread_num);
+    init_kernel_data(d_status, MTDC_PARAM_TABLE, total_thread_num);
+    make_uint32_random(d_status, num_data, total_thread_num);
 
     //finalize
     CUDA_SAFE_CALL(cudaFree(d_status));
