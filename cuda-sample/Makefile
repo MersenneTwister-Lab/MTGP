@@ -64,6 +64,12 @@ sample64-cuda-tex: mtgp64-cuda-tex.cu ../mtgp64-fast.h mtgp64dc-param-11213.c \
 	${NVCC} -o $@ mtgp64-cuda-tex.cu ../mtgp64-fast.o \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
+sample64-cuda-tex-small: mtgp64-cuda-tex-small.cu \
+	../mtgp64-fast.h mtgp64dc-param-11213.c \
+	../mtgp64-fast.o mtgp64-cuda-common.c mtgp-cuda-common.c
+	${NVCC} -o $@ mtgp64-cuda-tex-small.cu ../mtgp64-fast.o \
+	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
+
 sample64-cuda13-tex: mtgp64-cuda13-tex.cu \
 	../mtgp64-fast.h mtgp64dc-param-11213.c \
 	../mtgp64-fast.o mtgp64-cuda-common.c mtgp-cuda-common.c
