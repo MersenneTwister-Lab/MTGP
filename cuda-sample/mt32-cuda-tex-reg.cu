@@ -24,12 +24,7 @@ extern "C" {
 #include "mt32dc-params521.c"
 }
 #define MEXP 521
-#define BLOCK_NUM_MAX 1000
-//#define TOTAL_THREAD_MAX 8192
 #define THREAD_NUM 64
-
-//__constant__ uint32_t maskB[TOTAL_THREAD_MAX];
-//__constant__ uint32_t maskC[TOTAL_THREAD_MAX];
 
 /**
  * kernel I/O
@@ -41,84 +36,10 @@ extern "C" {
 
 texture<uint32_t, 1, cudaReadModeElementType> tex_param_ref;
 
-/**
- * The function of the recursion formula calculation.
- *
- * @param[in] X1 the farthest part of state array.
- * @param[in] X2 the second farthest part of state array.
- * @param[in] Y a part of state array.
- * @param[in] bid block id.
- * @return output
- */
-#if 0
-__device__ uint32_t para_rec(uint32_t X1, uint32_t X2, uint32_t Y,
-			     int total_id) {
-    uint32_t X = (X1 & MTDC_UPPER_MASK) | (X2 & MTDC_LOWER_MASK);
-
-    X = (X >> 1) ^ Y ^ tex1Dfetch(tex_param_ref, total_id * 4 + (X & 1));
-
-    return X;
-}
-#endif
-/**
- * The tempering function.
- *
- * @param[in] V the output value should be tempered.
- * @param[in] T the tempering helper value.
- * @param[in] bid block id.
- * @return the tempered value.
- */
-#if 0
-__device__ uint32_t temper(uint32_t x,  uint32_t maskB, uint32_t maskC) {
-
-    x ^= x >> MTDC_SHIFT0;
-    x ^= (x << MTDC_SHIFTB) & maskB;
-    x ^= (x << MTDC_SHIFTC) & maskC;
-    x ^= x >> MTDC_SHIFT1;
-    return x;
-}
-#endif
-/**
- * Read the internal state vector from kernel I/O data, and
- * put them into shared memory.
- *
- * @param[out] status shared memory.
- * @param[in] d_status kernel I/O data
- * @param[in] bid block id
- * @param[in] tid thread id
- */
-#if 0
-__device__ void status_read(uint32_t status[MTDC_N],
-			    const uint32_t *d_status,
-			    int total_id,
-			    int total_thread_num) {
-    for (int i = 0; i < MTDC_N; i++) {
-	status[i] = d_status[i * total_thread_num + total_id];
-    }
-}
-#endif
-/**
- * Read the internal state vector from shared memory, and
- * write them into kernel I/O data.
- *
- * @param[out] d_status kernel I/O data
- * @param[in] status shared memory.
- * @param[in] bid block id
- * @param[in] tid thread id
- */
-#if 0
-__device__ void status_write(uint32_t *d_status,
-			     const uint32_t status[],
-			     int total_id,
-			     int total_thread_num) {
-    for (int i = 0; i < MTDC_N; i++) {
-	d_status[i * total_thread_num + total_id] = status[i];
-    }
-}
-#endif
 __device__ uint32_t get_tex_params(int idx) {
     return tex1Dfetch(tex_param_ref, idx);
 }
+
 /**
  * kernel function.
  * This function generates 32-bit unsigned integers in d_data
@@ -136,40 +57,150 @@ __global__ void mt32_uint32_kernel(uint32_t* d_status,
     uint32_t mat_a = get_tex_params(total_id * 4 + 1);
     uint32_t maskB = get_tex_params(total_id * 4 + 2);
     uint32_t maskC = get_tex_params(total_id * 4 + 3);
-    uint32_t status[MTDC_N];
-    int p0, p1, pm;
+    uint32_t st0, st1, st2, st3, st4, st5, st6, st7, st8, st9, st10;
+    uint32_t st11, st12, st13, st14, st15, st16, tmp;
 
     // copy status data from global memory to shared memory.
     //status_read(status, d_status, total_id, total_thread_num);
-    for (int i = 0; i < MTDC_N; i++) {
-	status[i] = d_status[i * total_thread_num + total_id];
-    }
+#if 0
+    st0 = d_status[0 * total_thread_num + total_id];
+    st1 = d_status[1 * total_thread_num + total_id];
+    st2 = d_status[2 * total_thread_num + total_id];
+    st3 = d_status[3 * total_thread_num + total_id];
+    st4 = d_status[4 * total_thread_num + total_id];
+    st5 = d_status[5 * total_thread_num + total_id];
+    st6 = d_status[6 * total_thread_num + total_id];
+    st7 = d_status[7 * total_thread_num + total_id];
+    st8 = d_status[8 * total_thread_num + total_id];
+    st9 = d_status[9 * total_thread_num + total_id];
+    st10 = d_status[10 * total_thread_num + total_id];
+    st11 = d_status[11 * total_thread_num + total_id];
+    st12 = d_status[12 * total_thread_num + total_id];
+    st13 = d_status[13 * total_thread_num + total_id];
+    st14 = d_status[14 * total_thread_num + total_id];
+    st15 = d_status[15 * total_thread_num + total_id];
+    st16 = d_status[16 * total_thread_num + total_id];
+#else
+    d_status += total_id;
+    st0 = *d_status;
+    d_status += total_thread_num;
+    st1 = *d_status;
+    d_status += total_thread_num;
+    st2 = *d_status;
+    d_status += total_thread_num;
+    st3 = *d_status;
+    d_status += total_thread_num;
+    st4 = *d_status;
+    d_status += total_thread_num;
+    st5 = *d_status;
+    d_status += total_thread_num;
+    st6 = *d_status;
+    d_status += total_thread_num;
+    st7 = *d_status;
+    d_status += total_thread_num;
+    st8 = *d_status;
+    d_status += total_thread_num;
+    st9 = *d_status;
+    d_status += total_thread_num;
+    st10 = *d_status;
+    d_status += total_thread_num;
+    st11 = *d_status;
+    d_status += total_thread_num;
+    st12 = *d_status;
+    d_status += total_thread_num;
+    st13 = *d_status;
+    d_status += total_thread_num;
+    st14 = *d_status;
+    d_status += total_thread_num;
+    st15 = *d_status;
+    d_status += total_thread_num;
+    st16 = *d_status;
+#endif
 
-    p0 = 0;
-    p1 = 1;
-    pm = MTDC_M;
-    for (int i = 0; i < size; i++) {
- 	x = (status[p0] & MTDC_UPPER_MASK) | (status[p1] & MTDC_LOWER_MASK);
-	x = (x >> 1) ^ status[pm] ^ (((x & 1) == 1) ? mat_a : 0);
-	status[p0] = x;
+    d_data += total_id;
+    for (; size > 0; size--) {
+ 	x = (st0 & MTDC_UPPER_MASK) | (st1 & MTDC_LOWER_MASK);
+	x = (x >> 1) ^ st8 ^ (((x & 1) == 1) ? mat_a : 0);
+	tmp = x;
 	x ^= x >> MTDC_SHIFT0;
 	x ^= (x << MTDC_SHIFTB) & maskB;
 	x ^= (x << MTDC_SHIFTC) & maskC;
 	x ^= x >> MTDC_SHIFT1;
-	d_data[total_thread_num * i + total_id] = x;
-	p0++;
-	p1++;
-	pm++;
-	p0 = (p0 < MTDC_N) ? p0 : 0;
-	p1 = (p1 < MTDC_N) ? p1 : 0;
-	pm = (pm < MTDC_N) ? pm : 0;
+	*d_data = x;
+	d_data += total_thread_num;
+	st0 = st1;
+	st1 = st2;
+	st2 = st3;
+	st3 = st4;
+	st4 = st5;
+	st5 = st6;
+	st6 = st7;
+	st7 = st8;
+	st8 = st9;
+	st9 = st10;
+	st10 = st11;
+	st11 = st12;
+	st12 = st13;
+	st13 = st14;
+	st14 = st15;
+	st15 = st16;
+	st16 = tmp;
     }
     // write back status for next call
     //status_write(d_status, status, total_id, total_thread_num);
-#pragma unroll 1
-    for (int i = 0; i < MTDC_N; i++) {
-	d_status[i * total_thread_num + total_id] = status[i];
-    }
+#if 0
+    d_status[0 * total_thread_num + total_id] = st0;
+    d_status[1 * total_thread_num + total_id] = st1;
+    d_status[2 * total_thread_num + total_id] = st2;
+    d_status[3 * total_thread_num + total_id] = st3;
+    d_status[4 * total_thread_num + total_id] = st4;
+    d_status[5 * total_thread_num + total_id] = st5;
+    d_status[6 * total_thread_num + total_id] = st6;
+    d_status[7 * total_thread_num + total_id] = st7;
+    d_status[8 * total_thread_num + total_id] = st8;
+    d_status[9 * total_thread_num + total_id] = st9;
+    d_status[10 * total_thread_num + total_id] = st10;
+    d_status[11 * total_thread_num + total_id] = st11;
+    d_status[12 * total_thread_num + total_id] = st12;
+    d_status[13 * total_thread_num + total_id] = st13;
+    d_status[14 * total_thread_num + total_id] = st14;
+    d_status[15 * total_thread_num + total_id] = st15;
+    d_status[16 * total_thread_num + total_id] = st16;
+#else
+    *d_status = st16;
+    d_status -= total_thread_num;
+    *d_status = st15;
+    d_status -= total_thread_num;
+    *d_status = st14;
+    d_status -= total_thread_num;
+    *d_status = st13;
+    d_status -= total_thread_num;
+    *d_status = st12;
+    d_status -= total_thread_num;
+    *d_status = st11;
+    d_status -= total_thread_num;
+    *d_status = st10;
+    d_status -= total_thread_num;
+    *d_status = st9;
+    d_status -= total_thread_num;
+    *d_status = st8;
+    d_status -= total_thread_num;
+    *d_status = st7;
+    d_status -= total_thread_num;
+    *d_status = st6;
+    d_status -= total_thread_num;
+    *d_status = st5;
+    d_status -= total_thread_num;
+    *d_status = st4;
+    d_status -= total_thread_num;
+    *d_status = st3;
+    d_status -= total_thread_num;
+    *d_status = st2;
+    d_status -= total_thread_num;
+    *d_status = st1;
+    d_status -= total_thread_num;
+    *d_status = st0;
+#endif
 }
 
 /*
@@ -408,9 +439,8 @@ int main(int argc, char *argv[])
 	    printf("%s number_of_block number_of_output\n", argv[0]);
 	    return 1;
 	}
-	if (block_num < 1 || block_num > BLOCK_NUM_MAX) {
-	    printf("%s block_num should be between 1 and %d\n",
-		   argv[0], BLOCK_NUM_MAX);
+	if (block_num < 1) {
+	    printf("%s block_num should be greater than 1\n", argv[0]);
 	    return 1;
 	}
 	errno = 0;

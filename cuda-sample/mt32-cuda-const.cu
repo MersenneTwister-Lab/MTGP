@@ -25,11 +25,12 @@ extern "C" {
 }
 #define MEXP 521
 #define BLOCK_NUM_MAX 1000
-//#define TOTAL_THREAD_MAX 8192
+#define TOTAL_THREAD_MAX 5000
 #define THREAD_NUM 64
 
-//__constant__ uint32_t maskB[TOTAL_THREAD_MAX];
-//__constant__ uint32_t maskC[TOTAL_THREAD_MAX];
+__constant__ uint32_t mat_a[TOTAL_THREAD_MAX];
+__constant__ uint32_t maskB[TOTAL_THREAD_MAX];
+__constant__ uint32_t maskC[TOTAL_THREAD_MAX];
 
 /**
  * kernel I/O
@@ -39,7 +40,7 @@ extern "C" {
 //    uint32_t status[MTDC_N];
 //};
 
-texture<uint32_t, 1, cudaReadModeElementType> tex_param_ref;
+//texture<uint32_t, 1, cudaReadModeElementType> tex_param_ref;
 
 /**
  * The function of the recursion formula calculation.
@@ -116,9 +117,11 @@ __device__ void status_write(uint32_t *d_status,
     }
 }
 #endif
+#if 0
 __device__ uint32_t get_tex_params(int idx) {
     return tex1Dfetch(tex_param_ref, idx);
 }
+#endif
 /**
  * kernel function.
  * This function generates 32-bit unsigned integers in d_data
@@ -133,9 +136,6 @@ __global__ void mt32_uint32_kernel(uint32_t* d_status,
     const int total_id = blockIdx.x * blockDim.x + threadIdx.x;
     const int total_thread_num = gridDim.x * blockDim.x;
     uint32_t x;
-    uint32_t mat_a = get_tex_params(total_id * 4 + 1);
-    uint32_t maskB = get_tex_params(total_id * 4 + 2);
-    uint32_t maskC = get_tex_params(total_id * 4 + 3);
     uint32_t status[MTDC_N];
     int p0, p1, pm;
 
@@ -150,11 +150,11 @@ __global__ void mt32_uint32_kernel(uint32_t* d_status,
     pm = MTDC_M;
     for (int i = 0; i < size; i++) {
  	x = (status[p0] & MTDC_UPPER_MASK) | (status[p1] & MTDC_LOWER_MASK);
-	x = (x >> 1) ^ status[pm] ^ (((x & 1) == 1) ? mat_a : 0);
+	x = (x >> 1) ^ status[pm] ^ (((x & 1) == 1) ? mat_a[total_id] : 0);
 	status[p0] = x;
 	x ^= x >> MTDC_SHIFT0;
-	x ^= (x << MTDC_SHIFTB) & maskB;
-	x ^= (x << MTDC_SHIFTC) & maskC;
+	x ^= (x << MTDC_SHIFTB) & maskB[total_id];
+	x ^= (x << MTDC_SHIFTC) & maskC[total_id];
 	x ^= x >> MTDC_SHIFT1;
 	d_data[total_thread_num * i + total_id] = x;
 	p0++;
@@ -166,7 +166,6 @@ __global__ void mt32_uint32_kernel(uint32_t* d_status,
     }
     // write back status for next call
     //status_write(d_status, status, total_id, total_thread_num);
-#pragma unroll 1
     for (int i = 0; i < MTDC_N; i++) {
 	d_status[i * total_thread_num + total_id] = status[i];
     }
@@ -291,6 +290,7 @@ void init_kernel_data(uint32_t *d_status,
     free(h_status);
 }
 
+#if 0
 /**
  * This function sets texture lookup table.
  * @param params input, MTGP32 parameters.
@@ -319,6 +319,38 @@ void make_texture(const mt32_params_t params[],
     tex_param_ref.filterMode = cudaFilterModePoint;
     CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl, size * 4));
     free(h_texture_tbl);
+}
+#endif
+/**
+ * This function sets constants in device memory.
+ * @param params input, MTGP32 parameters.
+ */
+void make_constant_param(const mt32_params_t params[],
+			 int total_thread_num) {
+    const int size1 = sizeof(uint32_t) * total_thread_num;
+    uint32_t *h_mat_tbl;
+    uint32_t *h_maskB_tbl;
+    uint32_t *h_maskC_tbl;
+
+    h_mat_tbl = (uint32_t *)malloc(size1);
+    h_maskB_tbl = (uint32_t *)malloc(size1);
+    h_maskC_tbl = (uint32_t *)malloc(size1);
+    if (h_mat_tbl == NULL || h_maskB_tbl == NULL || h_maskC_tbl == NULL) {
+	printf("failure in allocating host memory for constant table.\n");
+	exit(1);
+    }
+    for (int i = 0; i < total_thread_num; i++) {
+	h_mat_tbl[i] = params[i].mat_a;
+	h_maskB_tbl[i] = params[i].maskB;
+	h_maskC_tbl[i] = params[i].maskC;
+    }
+    // copy from malloc area only
+    CUDA_SAFE_CALL(cudaMemcpyToSymbol(mat_a, h_mat_tbl, size1));
+    CUDA_SAFE_CALL(cudaMemcpyToSymbol(maskB, h_maskB_tbl, size1));
+    CUDA_SAFE_CALL(cudaMemcpyToSymbol(maskC, h_maskC_tbl, size1));
+    free(h_mat_tbl);
+    free(h_maskB_tbl);
+    free(h_maskC_tbl);
 }
 
 /**
@@ -438,6 +470,11 @@ int main(int argc, char *argv[])
     CUT_DEVICE_INIT(argc, argv);
 
     total_thread_num = block_num * THREAD_NUM;
+    if (total_thread_num > TOTAL_THREAD_MAX) {
+	printf("total_thread_num(%d) > TOTAL_THREAD_MAX(%d)\n",
+	       total_thread_num, TOTAL_THREAD_MAX);
+	return 1;
+    }
     num_unit = total_thread_num * MTDC_N;
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
 			      sizeof(uint32_t) * MTDC_N * total_thread_num));
@@ -447,8 +484,8 @@ int main(int argc, char *argv[])
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    //make_constant_param(MTDC_PARAM_TABLE, total_thread_num);
-    make_texture(MTDC_PARAM_TABLE, d_texture, total_thread_num);
+    make_constant_param(MTDC_PARAM_TABLE, total_thread_num);
+    //make_texture(MTDC_PARAM_TABLE, d_texture, total_thread_num);
     init_kernel_data(d_status, MTDC_PARAM_TABLE, total_thread_num);
     make_uint32_random(d_status, num_data, total_thread_num);
 

@@ -25,19 +25,7 @@ extern "C" {
 }
 #define MEXP 521
 #define BLOCK_NUM_MAX 1000
-//#define TOTAL_THREAD_MAX 8192
 #define THREAD_NUM 64
-
-//__constant__ uint32_t maskB[TOTAL_THREAD_MAX];
-//__constant__ uint32_t maskC[TOTAL_THREAD_MAX];
-
-/**
- * kernel I/O
- * This structure must be initialized before first use.
- */
-//struct mt32_kernel_status_t {
-//    uint32_t status[MTDC_N];
-//};
 
 texture<uint32_t, 1, cudaReadModeElementType> tex_param_ref;
 
@@ -136,39 +124,37 @@ __global__ void mt32_uint32_kernel(uint32_t* d_status,
     uint32_t mat_a = get_tex_params(total_id * 4 + 1);
     uint32_t maskB = get_tex_params(total_id * 4 + 2);
     uint32_t maskC = get_tex_params(total_id * 4 + 3);
-    uint32_t status[MTDC_N];
-    int p0, p1, pm;
+    uint32_t status[16];
+    uint32_t st0;
+    int p;
 
     // copy status data from global memory to shared memory.
     //status_read(status, d_status, total_id, total_thread_num);
-    for (int i = 0; i < MTDC_N; i++) {
-	status[i] = d_status[i * total_thread_num + total_id];
+    st0 = d_status[total_id];
+    for (int i = 1; i < MTDC_N; i++) {
+	status[i] = d_status[total_thread_num * i + total_id];
     }
 
-    p0 = 0;
-    p1 = 1;
-    pm = MTDC_M;
+    p = 0;
     for (int i = 0; i < size; i++) {
- 	x = (status[p0] & MTDC_UPPER_MASK) | (status[p1] & MTDC_LOWER_MASK);
-	x = (x >> 1) ^ status[pm] ^ (((x & 1) == 1) ? mat_a : 0);
-	status[p0] = x;
+ 	x = (st0 & MTDC_UPPER_MASK) | (status[p] & MTDC_LOWER_MASK);
+	x = (x >> 1) ^ status[(p + MTDC_M - 1) & 0x0f]
+	    ^ (((x & 1) == 1) ? mat_a : 0);
+	st0 = status[p];
+	status[p] = x;
 	x ^= x >> MTDC_SHIFT0;
 	x ^= (x << MTDC_SHIFTB) & maskB;
 	x ^= (x << MTDC_SHIFTC) & maskC;
 	x ^= x >> MTDC_SHIFT1;
 	d_data[total_thread_num * i + total_id] = x;
-	p0++;
-	p1++;
-	pm++;
-	p0 = (p0 < MTDC_N) ? p0 : 0;
-	p1 = (p1 < MTDC_N) ? p1 : 0;
-	pm = (pm < MTDC_N) ? pm : 0;
+	p = (p + 1) & 0x0f;
     }
     // write back status for next call
     //status_write(d_status, status, total_id, total_thread_num);
+    d_status[total_id] = st0;
 #pragma unroll 1
-    for (int i = 0; i < MTDC_N; i++) {
-	d_status[i * total_thread_num + total_id] = status[i];
+    for (int i = 1; i < MTDC_N; i++) {
+	d_status[total_thread_num * i + total_id] = status[(i + p - 1) & 0x0f];
     }
 }
 
