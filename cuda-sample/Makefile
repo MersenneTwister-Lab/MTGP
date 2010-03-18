@@ -18,7 +18,9 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 
 STD = -std=c99
 CC = gcc
-NVCC = nvcc -DDEBUG -ccbin=/tmp #--compiler-options '-Wall'
+#ARCH = -arch=compute_11
+ARCH = -arch=compute_13
+NVCC = nvcc -DDEBUG $(ARCH) -ccbin=/tmp #--compiler-options '-Wall'
 
 # for OS X
 #CUTILINC = -I"/Developer/GPU Computing/C/common/inc" -I../
@@ -78,7 +80,7 @@ sample64-cuda13-tex: mtgp64-cuda13-tex.cu \
 
 mt32-cuda-tex: mt32-cuda-tex.cu mt32dc-params521.c \
 	mtgp32-cuda-common.c mtgp-cuda-common.c
-	${NVCC} -I./ -o $@ mt32-cuda-tex.cu \
+	${NVCC} ${ARCH} -I./ -o $@ mt32-cuda-tex.cu \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
 mt32-cuda-tex-reg.bin: mt32-cuda-tex-reg.cu mt32dc-params521.c \
@@ -93,7 +95,7 @@ mt32-cuda-tex-reg.bin: mt32-cuda-tex-reg.cu mt32dc-params521.c \
 	${NVCC} ${CUTILINC} -cubin $<
 
 .cu.bin:
-	${NVCC} ${CUTILINC} -o $@ $< ${CUTILLIB} ${CUDALINK}
+	${NVCC} ${ARCH} ${CUTILINC} -o $@ $< ${CUTILLIB} ${CUDALINK}
 
 .c.o:
 	${CC} ${CCFLAGS} -c $<

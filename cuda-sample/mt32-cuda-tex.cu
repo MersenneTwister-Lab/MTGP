@@ -26,7 +26,7 @@ extern "C" {
 #define MEXP 521
 #define BLOCK_NUM_MAX 1000
 //#define TOTAL_THREAD_MAX 8192
-#define THREAD_NUM 64
+#define THREAD_NUM 128
 
 //__constant__ uint32_t maskB[TOTAL_THREAD_MAX];
 //__constant__ uint32_t maskC[TOTAL_THREAD_MAX];

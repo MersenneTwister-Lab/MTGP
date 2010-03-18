@@ -25,7 +25,7 @@ extern "C" {
 }
 #define MEXP 521
 #define BLOCK_NUM_MAX 1000
-#define THREAD_NUM 64
+#define THREAD_NUM 128
 
 texture<uint32_t, 1, cudaReadModeElementType> tex_param_ref;
 
