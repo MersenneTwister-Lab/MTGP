@@ -6,9 +6,9 @@
  * The generation speed of PRNG using texture is faster than using
  * constant tabel on Geforce GTX 260.
  *
- * MTGP64-44497
+ * MTGP64-11213
  * This program generates 64-bit unsigned integers.
- * The period of generated integers is 2<sup>44497</sup>-1.
+ * The period of generated integers is 2<sup>11213</sup>-1.
  * This also generates double precision floating point numbers.
  */
 #define __STDC_FORMAT_MACROS 1
