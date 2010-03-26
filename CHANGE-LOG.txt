@@ -1,3 +1,9 @@
+ver. 1.0.2
+-------
+change cuda-sample MEXP form 23209 and 44497 to 11213.
+This is because CUDA occupancy of the latter is larger
+than those of the formers.
+
 ver. 1.0.1
 -------
 fixed 64bit init_by_array, init_by_str bug.

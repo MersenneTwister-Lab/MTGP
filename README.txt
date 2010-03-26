@@ -1,6 +1,6 @@
  =================================================================
- MTGP ver. 1.0.1
- 2010.1.5
+ MTGP ver. 1.0.2
+ 2010.3.26
 
  Mersenne Twister for Graphic Processors(MTGP)
  based on IEEE 754 floating point format.
