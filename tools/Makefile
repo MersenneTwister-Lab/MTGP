@@ -34,6 +34,9 @@ cmp64-cuda: test64.c
 cmp32-cuda: test32.c
 	${CC} ${CCFLAGS} -o $@ test32.c ${OBJS}
 
+cmp32-cuda2: test32-2.c
+	${CC} ${CCFLAGS} -o $@ test32-2.c ${OBJS}
+
 check-poly: check-poly.cpp
 	${CPP} ${CPPFLAGS} -o $@ check-poly.cpp ${OBJS} -lntl -lgmp -lcrypto
 
