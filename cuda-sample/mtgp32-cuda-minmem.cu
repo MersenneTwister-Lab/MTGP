@@ -27,7 +27,7 @@ extern "C" {
 #define MEXP 11213
 #define N MTGPDC_N
 #define THREAD_NUM MTGPDC_FLOOR_2P
-#define LARGE_SIZE (THREAD_NUM * 3)
+#define LARGE_SIZE (N + THREAD_NUM)
 //#define BLOCK_NUM 32
 #define BLOCK_NUM_MAX 200
 #define TBL_SIZE 16
@@ -154,10 +154,9 @@ __device__ void status_read(uint32_t status[LARGE_SIZE],
 			    const mtgp32_kernel_status_t *d_status,
 			    int bid,
 			    int tid) {
-    status[LARGE_SIZE - N + tid] = d_status[bid].status[tid];
+    status[tid] = d_status[bid].status[tid];
     if (tid < N - THREAD_NUM) {
-	status[LARGE_SIZE - N + THREAD_NUM + tid]
-	    = d_status[bid].status[THREAD_NUM + tid];
+	status[THREAD_NUM + tid] = d_status[bid].status[THREAD_NUM + tid];
     }
     __syncthreads();
 }
@@ -174,11 +173,12 @@ __device__ void status_read(uint32_t status[LARGE_SIZE],
 __device__ void status_write(mtgp32_kernel_status_t *d_status,
 			     const uint32_t status[LARGE_SIZE],
 			     int bid,
-			     int tid) {
-    d_status[bid].status[tid] = status[LARGE_SIZE - N + tid];
+			     int tid,
+			     int index) {
+    d_status[bid].status[tid] = status[index];
     if (tid < N - THREAD_NUM) {
 	d_status[bid].status[THREAD_NUM + tid]
-	    = status[4 * THREAD_NUM - N + tid];
+	    = status[(THREAD_NUM + index) % LARGE_SIZE];
     }
     __syncthreads();
 }
@@ -196,6 +196,7 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
     const int bid = blockIdx.x;
     const int tid = threadIdx.x;
     int pos = pos_tbl[bid];
+    int index = tid;
     uint32_t r;
     uint32_t o;
 
@@ -203,63 +204,19 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
     status_read(status, d_status, bid, tid);
 
     // main loop
-    for (int i = 0; i < size; i += LARGE_SIZE) {
-
-#if defined(DEBUG) && defined(__DEVICE_EMULATION__)
-	if ((i == 0) && (bid == 0) && (tid <= 1)) {
-	    printf("status[LARGE_SIZE - N + tid]:%08x\n",
-		   status[LARGE_SIZE - N + tid]);
-	    printf("status[LARGE_SIZE - N + tid + 1]:%08x\n",
-		   status[LARGE_SIZE - N + tid + 1]);
-	    printf("status[LARGE_SIZE - N + tid + pos]:%08x\n",
-		   status[LARGE_SIZE - N + tid + pos]);
-	    printf("sh1:%d\n", sh1_tbl[bid]);
-	    printf("sh2:%d\n", sh2_tbl[bid]);
-	    printf("mask:%08x\n", mask[0]);
-	    for (int j = 0; j < 16; j++) {
-		printf("tbl[%d]:%08x\n", j, param_tbl[0][j]);
-	    }
-	}
-#endif
-	r = para_rec(status[LARGE_SIZE - N + tid],
-		 status[LARGE_SIZE - N + tid + 1],
-		 status[LARGE_SIZE - N + tid + pos],
-		 bid);
-	status[tid] = r;
-#if defined(DEBUG) && defined(__DEVICE_EMULATION__)
-	if ((i == 0) && (bid == 0) && (tid <= 1)) {
-	    printf("status[tid]:%08x\n", status[tid]);
-	}
-#endif
-	o = temper(r, status[LARGE_SIZE - N + tid + pos - 1], bid);
-#if defined(DEBUG) && defined(__DEVICE_EMULATION__)
-	if ((i == 0) && (bid == 0) && (tid <= 1)) {
-	    printf("r:%08" PRIx32 "\n", r);
-	}
-#endif
-	d_data[size * bid + i + tid] = o;
-	__syncthreads();
-	r = para_rec(status[(4 * THREAD_NUM - N + tid) % LARGE_SIZE],
-		     status[(4 * THREAD_NUM - N + tid + 1) % LARGE_SIZE],
-		     status[(4 * THREAD_NUM - N + tid + pos) % LARGE_SIZE],
+    for (int i = 0; i < size; i += THREAD_NUM) {
+	r = para_rec(status[index],
+		     status[(index + 1) % LARGE_SIZE],
+		     status[(index + pos) % LARGE_SIZE],
 		     bid);
-	status[tid + THREAD_NUM] = r;
-	o = temper(r,
-		   status[(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
-		   bid);
-	d_data[size * bid + THREAD_NUM + i + tid] = o;
+	status[(index + N) % LARGE_SIZE] = r;
+	o = temper(r, status[(index + pos - 1) % LARGE_SIZE], bid);
+	d_data[size * bid + i + index] = o;
 	__syncthreads();
-	r = para_rec(status[2 * THREAD_NUM - N + tid],
-		     status[2 * THREAD_NUM - N + tid + 1],
-		     status[2 * THREAD_NUM - N + tid + pos],
-		     bid);
-	status[tid + 2 * THREAD_NUM] = r;
-	o = temper(r, status[tid + pos - 1 + 2 * THREAD_NUM - N], bid);
-	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
-	__syncthreads();
+	index = (index + THREAD_NUM) % LARGE_SIZE;
     }
     // write back status for next call
-    status_write(d_status, status, bid, tid);
+    status_write(d_status, status, bid, tid, index);
 }
 
 /**
@@ -277,6 +234,7 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
     const int bid = blockIdx.x;
     const int tid = threadIdx.x;
     int pos = pos_tbl[bid];
+    int index = tid;
     uint32_t r;
     float o;
 
@@ -284,39 +242,19 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
     status_read(status, d_status, bid, tid);
 
     // main loop
-    for (int i = 0; i < size; i += LARGE_SIZE) {
-	r = para_rec(status[LARGE_SIZE - N + tid],
-		     status[LARGE_SIZE - N + tid + 1],
-		     status[LARGE_SIZE - N + tid + pos],
+    for (int i = 0; i < size; i += THREAD_NUM) {
+	r = para_rec(status[index],
+		     status[(index + 1) % LARGE_SIZE],
+		     status[(index + pos) % LARGE_SIZE],
 		     bid);
-	status[tid] = r;
-	o = temper_single(r, status[LARGE_SIZE - N + tid + pos - 1], bid);
-	d_data[size * bid + i + tid] = o;
+	status[(index + N) % LARGE_SIZE] = r;
+	o = temper_single(r, status[(index + pos - 1) % LARGE_SIZE], bid);
+	d_data[size * bid + i + index] = o;
 	__syncthreads();
-	r = para_rec(status[(4 * THREAD_NUM - N + tid) % LARGE_SIZE],
-		     status[(4 * THREAD_NUM - N + tid + 1) % LARGE_SIZE],
-		     status[(4 * THREAD_NUM - N + tid + pos) % LARGE_SIZE],
-		     bid);
-	status[tid + THREAD_NUM] = r;
-	o = temper_single(
-	    r,
-	    status[(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
-	    bid);
-	d_data[size * bid + THREAD_NUM + i + tid] = o;
-	__syncthreads();
-	r = para_rec(status[2 * THREAD_NUM - N + tid],
-		     status[2 * THREAD_NUM - N + tid + 1],
-		     status[2 * THREAD_NUM - N + tid + pos],
-		     bid);
-	status[tid + 2 * THREAD_NUM] = r;
-	o = temper_single(r,
-			  status[tid + pos - 1 + 2 * THREAD_NUM - N],
-			  bid);
-	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
-	__syncthreads();
+	index = (index + THREAD_NUM) % LARGE_SIZE;
     }
     // write back status for next call
-    status_write(d_status, status, bid, tid);
+    status_write(d_status, status, bid, tid, index);
 }
 
 /**
@@ -334,6 +272,7 @@ __global__ void mtgp32_single01_kernel(mtgp32_kernel_status_t* d_status,
     const int bid = blockIdx.x;
     const int tid = threadIdx.x;
     int pos = pos_tbl[bid];
+    int index = tid;
     uint32_t r;
     float o;
 
@@ -341,39 +280,19 @@ __global__ void mtgp32_single01_kernel(mtgp32_kernel_status_t* d_status,
     status_read(status, d_status, bid, tid);
 
     // main loop
-    for (int i = 0; i < size; i += LARGE_SIZE) {
-	r = para_rec(status[LARGE_SIZE - N + tid],
-		     status[LARGE_SIZE - N + tid + 1],
-		     status[LARGE_SIZE - N + tid + pos],
+    for (int i = 0; i < size; i += THREAD_NUM) {
+	r = para_rec(status[index],
+		     status[(index + 1) % LARGE_SIZE],
+		     status[(index + pos) % LARGE_SIZE],
 		     bid);
-	status[tid] = r;
-	o = temper_single01(r, status[LARGE_SIZE - N + tid + pos - 1], bid);
-	d_data[size * bid + i + tid] = o;
+	status[(index + N) % LARGE_SIZE] = r;
+	o = temper_single01(r, status[(index + pos - 1) % LARGE_SIZE], bid);
+	d_data[size * bid + i + index] = o;
 	__syncthreads();
-	r = para_rec(status[(4 * THREAD_NUM - N + tid) % LARGE_SIZE],
-		     status[(4 * THREAD_NUM - N + tid + 1) % LARGE_SIZE],
-		     status[(4 * THREAD_NUM - N + tid + pos) % LARGE_SIZE],
-		     bid);
-	status[tid + THREAD_NUM] = r;
-	o = temper_single01(
-	    r,
-	    status[(4 * THREAD_NUM - N + tid + pos - 1) % LARGE_SIZE],
-	    bid);
-	d_data[size * bid + THREAD_NUM + i + tid] = o;
-	__syncthreads();
-	r = para_rec(status[2 * THREAD_NUM - N + tid],
-		     status[2 * THREAD_NUM - N + tid + 1],
-		     status[2 * THREAD_NUM - N + tid + pos],
-		     bid);
-	status[tid + 2 * THREAD_NUM] = r;
-	o = temper_single01(r,
-			  status[tid + pos - 1 + 2 * THREAD_NUM - N],
-			  bid);
-	d_data[size * bid + 2 * THREAD_NUM + i + tid] = o;
-	__syncthreads();
+	index = (index + THREAD_NUM) % LARGE_SIZE;
     }
     // write back status for next call
-    status_write(d_status, status, bid, tid);
+    status_write(d_status, status, bid, tid, index);
 }
 
 #include "mtgp-cuda-common.c"
@@ -684,7 +603,7 @@ int main(int argc, char *argv[])
     }
     CUT_DEVICE_INIT(argc, argv);
 
-    num_unit = LARGE_SIZE * block_num;
+    num_unit = THREAD_NUM * block_num;
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
 			      sizeof(mtgp32_kernel_status_t) * block_num));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[0],

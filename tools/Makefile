@@ -11,6 +11,7 @@
 # see LICENSE.txt
 #
 
+DEBUG = -O0 -g -ggdb
 WARN = -Wmissing-prototypes -Wall #-Winline
 #WARN = -Wmissing-prototypes -Wall -W
 OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
@@ -24,7 +25,7 @@ STD = -std=c99
 CC = gcc
 CPP = g++
 CPPFLAGS = -Wall -Wextra -O3 -floop-optimize2 -msse3 -I../ $(DEBUG)
-CCFLAGS = -I../ $(OPTI) $(WARN) $(STD) $(DEBUG)
+CCFLAGS = -I../ -I/Users/saito/testu01/include -L/Users/saito/testu01/lib $(OPTI) $(WARN) $(STD) $(DEBUG)
 OBJS = ../mtgp32-fast.o ../mtgp64-fast.o ../mtgp32-param-fast.o \
 	../mtgp64-param-fast.o
 
@@ -45,6 +46,9 @@ zero-count: zero-count.c
 
 bigcrush: bigcrush.c
 	${CC} ${CCFLAGS} -o $@ bigcrush.c $(OBJS) -ltestu01
+
+bigcrush-param: bigcrush-param.c
+	${CC} ${CCFLAGS} -o $@ bigcrush-param.c $(OBJS) -ltestu01
 
 .c.o:
 	${CC} ${CCFLAGS} -c $<
