@@ -412,8 +412,7 @@ void make_constant_param(const mtgp32_params_fast_t params[],
     CUDA_SAFE_CALL(cudaMemcpyToSymbol(pos_tbl, h_pos_tbl, size1));
     CUDA_SAFE_CALL(cudaMemcpyToSymbol(sh1_tbl, h_sh1_tbl, size1));
     CUDA_SAFE_CALL(cudaMemcpyToSymbol(sh2_tbl, h_sh2_tbl, size1));
-    CUDA_SAFE_CALL(cudaMemcpyToSymbol(&mask,
-				      &h_mask, sizeof(uint32_t)));
+    CUDA_SAFE_CALL(cudaMemcpyToSymbol(mask, h_mask, sizeof(uint32_t)));
     free(h_pos_tbl);
     free(h_sh1_tbl);
     free(h_sh2_tbl);

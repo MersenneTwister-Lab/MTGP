@@ -11,7 +11,7 @@
 # see LICENSE.txt
 #
 
-DEBUG = -O0 -g -ggdb
+#DEBUG = -O0 -g -ggdb
 WARN = -Wmissing-prototypes -Wall #-Winline
 #WARN = -Wmissing-prototypes -Wall -W
 OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
@@ -54,4 +54,4 @@ bigcrush-param: bigcrush-param.c
 	${CC} ${CCFLAGS} -c $<
 
 clean:
-	rm -f *.o *~
+	rm -rf *.o *~ *.dSYM

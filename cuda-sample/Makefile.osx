@@ -11,16 +11,17 @@
 # see LICENSE.txt
 #
 
-#DEBUG = -DDEBUG -g -O0
+#DEBUG = -DDEBUG -DDEVICE_EMU -g -O0 -deviceemu
 WARN = -Wmissing-prototypes -Wall #-Winline
 OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 -fno-strict-aliasing
 
 STD = -std=c99
 CC = gcc
-#ARCH = -arch=compute_11
-ARCH = -arch=compute_13
+ARCH = -arch=compute_11
+#ARCH = -arch=compute_13
 #NVCC = nvcc -DDEBUG $(ARCH) -ccbin=/tmp #--compiler-options '-Wall'
+#NVCC = nvcc -DDEBUG $(ARCH) #--compiler-options '-Wall'
 NVCC = nvcc -DDEBUG $(ARCH) #--compiler-options '-Wall'
 
 # for OS X

@@ -28,6 +28,7 @@ extern "C" {
 #define N MTGPDC_N
 #define THREAD_NUM MTGPDC_FLOOR_2P
 #define LARGE_SIZE (N + THREAD_NUM)
+//#define LARGE_SIZE 256
 //#define BLOCK_NUM 32
 #define BLOCK_NUM_MAX 200
 #define TBL_SIZE 16
@@ -175,7 +176,7 @@ __device__ void status_write(mtgp32_kernel_status_t *d_status,
 			     int bid,
 			     int tid,
 			     int index) {
-    d_status[bid].status[tid] = status[index];
+    d_status[bid].status[tid] = status[index % LARGE_SIZE];
     if (tid < N - THREAD_NUM) {
 	d_status[bid].status[THREAD_NUM + tid]
 	    = status[(THREAD_NUM + index) % LARGE_SIZE];
@@ -211,7 +212,7 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
 		     bid);
 	status[(index + N) % LARGE_SIZE] = r;
 	o = temper(r, status[(index + pos - 1) % LARGE_SIZE], bid);
-	d_data[size * bid + i + index] = o;
+	d_data[size * bid + i + tid] = o;
 	__syncthreads();
 	index = (index + THREAD_NUM) % LARGE_SIZE;
     }
@@ -241,6 +242,11 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
     // copy status data from global memory to shared memory.
     status_read(status, d_status, bid, tid);
 
+#if defined(DEBUG) && defined(__DEVICE_EMULATION__)
+    printf("status[0]:%08x\n", status[0]);
+    printf("status[1]:%08x\n", status[1]);
+#endif
+
     // main loop
     for (int i = 0; i < size; i += THREAD_NUM) {
 	r = para_rec(status[index],
@@ -249,7 +255,7 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
 		     bid);
 	status[(index + N) % LARGE_SIZE] = r;
 	o = temper_single(r, status[(index + pos - 1) % LARGE_SIZE], bid);
-	d_data[size * bid + i + index] = o;
+	d_data[size * bid + i + tid] = o;
 	__syncthreads();
 	index = (index + THREAD_NUM) % LARGE_SIZE;
     }
@@ -287,7 +293,7 @@ __global__ void mtgp32_single01_kernel(mtgp32_kernel_status_t* d_status,
 		     bid);
 	status[(index + N) % LARGE_SIZE] = r;
 	o = temper_single01(r, status[(index + pos - 1) % LARGE_SIZE], bid);
-	d_data[size * bid + i + index] = o;
+	d_data[size * bid + i + tid] = o;
 	__syncthreads();
 	index = (index + THREAD_NUM) % LARGE_SIZE;
     }
@@ -331,8 +337,7 @@ void make_constant_param(const mtgp32_params_fast_t params[],
     CUDA_SAFE_CALL(cudaMemcpyToSymbol(pos_tbl, h_pos_tbl, size1));
     CUDA_SAFE_CALL(cudaMemcpyToSymbol(sh1_tbl, h_sh1_tbl, size1));
     CUDA_SAFE_CALL(cudaMemcpyToSymbol(sh2_tbl, h_sh2_tbl, size1));
-    CUDA_SAFE_CALL(cudaMemcpyToSymbol(&mask,
-				      &h_mask, sizeof(uint32_t)));
+    CUDA_SAFE_CALL(cudaMemcpyToSymbol(mask, h_mask, sizeof(uint32_t)));
     free(h_pos_tbl);
     free(h_sh1_tbl);
     free(h_sh2_tbl);
@@ -487,7 +492,7 @@ void make_single_random(mtgp32_kernel_status_t* d_status,
     CUDA_SAFE_CALL(
 	cudaMemcpy(h_data,
 		   d_data,
-		   sizeof(uint32_t) * num_data,
+		   sizeof(float) * num_data,
 		   cudaMemcpyDeviceToHost));
     gputime = cutGetTimerValue(timer);
     print_float_array(h_data, num_data, block_num);
@@ -544,7 +549,7 @@ void make_single01_random(mtgp32_kernel_status_t* d_status,
     CUDA_SAFE_CALL(
 	cudaMemcpy(h_data,
 		   d_data,
-		   sizeof(uint32_t) * num_data,
+		   sizeof(float) * num_data,
 		   cudaMemcpyDeviceToHost));
     gputime = cutGetTimerValue(timer);
     print_float_array(h_data, num_data, block_num);
@@ -603,7 +608,7 @@ int main(int argc, char *argv[])
     }
     CUT_DEVICE_INIT(argc, argv);
 
-    num_unit = THREAD_NUM * block_num;
+    num_unit = THREAD_NUM * 3 * block_num;
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
 			      sizeof(mtgp32_kernel_status_t) * block_num));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[0],

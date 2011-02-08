@@ -18,16 +18,16 @@ void u32_big_crush(mtgp32_params_fast_t *params, int seed);
 void u64_big_crush(mtgp64_params_fast_t *params, int seed);
 void read_params32(mtgp32_params_fast_t *params, char * argv[]);
 void read_params64(mtgp64_params_fast_t *params, char * argv[]);
-void fill_table32(uint32_t dist[], uint32_t source[], int size);
-void fill_table64(uint64_t dist[], uint64_t source[], int size);
+void fill_table32(uint32_t dest[], uint32_t source[], int size);
+void fill_table64(uint64_t dest[], uint64_t source[], int size);
 
 int main(int argc, char *argv[]) {
     int bit_size;
     int seed = 1;
 
-    rep[34] = 1;
+    rep[34] = 0;
     rep[35] = 1;
-    rep[99] = 1;
+    rep[99] = 0;
     rep[100] = 1;
 
     if (argc <= 15) {
@@ -85,13 +85,30 @@ void read_params32(mtgp32_params_fast_t *params, char *argv[]) {
     }
     fill_table32(params->tbl, tmp, 16);
     for (int i = 0; i < 4; i++) {
-	params->tmp_tbl[i] = strtoul(argv[i + 10], NULL, 16);
+	tmp[i] = strtoul(argv[i + 10], NULL, 16);
     }
     fill_table32(params->tmp_tbl, tmp, 16);
     for (int i = 0; i < 16; i++) {
 	params->flt_tmp_tbl[i] = 0x3f800000U | (params->tmp_tbl[i] >> 9);
     }
     snprintf((char *)params->poly_sha1, sizeof(params->poly_sha1), "%d", id);
+#if 0
+    printf("mexp:%d\n", params->mexp);
+    printf("pos:%d\n", params->pos);
+    printf("sh1:%d\n", params->sh1);
+    printf("sh2:%d\n", params->sh2);
+    printf("mask:%08x\n", params->mask);
+    for (int i = 0; i < 16; i++) {
+	printf("tbl[%02d]:%08x\n", i, params->tbl[i]);
+    }
+    for (int i = 0; i < 16; i++) {
+	printf("tmp_tbl[%02d]:%08x\n", i, params->tmp_tbl[i]);
+    }
+    for (int i = 0; i < 16; i++) {
+	printf("flt_tmp_tbl[%02d]:%08x\n", i, params->flt_tmp_tbl[i]);
+    }
+    fflush(stdout);
+#endif
 }
 
 
@@ -99,21 +116,23 @@ void read_params64(mtgp64_params_fast_t *params, char *argv[]) {
 
 }
 
-void fill_table32(uint32_t dist[], uint32_t source[], int size) {
-    for(int i = 1; i < size; i++) {
+void fill_table32(uint32_t dest[], uint32_t source[], int size) {
+    for(int i = 0; i < size; i++) {
+	dest[i] = 0;
 	for(int j = 1, k = 0; j <= i; j <<= 1, k++) {
 	    if (i & j) {
-		dist[i] ^= source[k];
+		dest[i] ^= source[k];
 	    }
 	}
     }
 }
 
-void fill_table64(uint64_t dist[], uint64_t source[], int size) {
-    for(int i = 1; i < size; i++) {
+void fill_table64(uint64_t dest[], uint64_t source[], int size) {
+    for(int i = 0; i < size; i++) {
+	dest[i] = 0;
 	for(int j = 1, k = 0; j <= i; j <<= 1, k++) {
 	    if (i & j) {
-		dist[i] ^= source[k];
+		dest[i] ^= source[k];
 	    }
 	}
     }
