@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
+#include <NTL/vec_GF2.h>
+#include <NTL/GF2X.h>
+#include <NTL/GF2Xfactoring.h>
 
 const uint32_t seed[32]={
     0x8cf35fea, 0xe1dd819e, 0x4a7d0a8e, 0xe0c05911, 0xfd053b8d,
@@ -20,6 +23,7 @@ const int pos2[32] = {5,14,28,24,19,13,0,17,11,20,7,10,6,15,2,9,8,
 const int shift1 = 2;
 const int shift2[32] = {0,1,0,1,1,1,0,0,1,0,0,1,0,0,1,0,
 		       0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1};
+void check_polynomial(uint32_t status[]);
 
 static void generate(uint32_t status[], uint32_t out[])
 {
@@ -54,5 +58,34 @@ int main(int argc, char **argv) {
 	    }
 	}
     }
+    check_polynomial(status);
     return 0;
+}
+
+void check_polynomial(uint32_t status[]) {
+    using namespace NTL;
+    using namespace std;
+
+    uint32_t out[32];
+    vec_GF2 vec;
+    int mexp = 1024;
+    vec.SetLength(mexp * 2);
+    GF2X minpoly;
+    for (int k = 0; k < 10; k++) {
+    for (int i = 0; i < 32; i++) {
+	for (int j = 0; j < mexp * 2; j++) {
+	    generate(status, out);
+	    vec[j] = (out[k] >> i) & 1;
+	}
+	MinPolySeq(minpoly, vec, mexp);
+	cout << dec << k << ":";
+	cout << dec << i << ":";
+	cout << "deg " << dec << deg(minpoly);
+	if (IterIrredTest(minpoly)) {
+	    cout << " Irreducible" << endl;
+	} else {
+	    cout << " Reducible" << endl;
+	}
+    }
+    }
 }

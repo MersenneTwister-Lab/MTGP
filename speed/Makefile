@@ -1,6 +1,6 @@
 # -*- Makefile -*-
-# @file  Makefile
-# @brief Makefile
+# @file  Makefile.osx
+# @brief Makefile.osx
 #
 # @author Mutsuo Saito (Hiroshima University)
 # @author Makoto Matsumoto (University of Tokyo)
@@ -19,17 +19,11 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 -fno-strict-aliasing
 
 STD = -std=c99
-CC = gcc -Wall -Wextra -O3 $(STD)
+CC = gcc
 ARCH = -arch=compute_11
 #ARCH = -arch=compute_13
-NVCC = nvcc -DDEBUG $(ARCH) #--compiler-options '-Wall'
-
-# for OS X
-#CUTILINC = -I"/Developer/GPU Computing/C/common/inc/" -I../
-#CUTILLIB = -L"/Developer/GPU Computing/C/lib/" -lcutil_i386
-# for linux
-CUTILINC = -I$(HOME)/NVIDIA_GPU_Computing_SDK/C/common/inc -I../
-CUTILLIB = -L$(HOME)/NVIDIA_GPU_Computing_SDK/C/lib -lcutil
+NVCC = nvcc -DDEBUG -D__STDC_CONSTANT_MACROS=1 -D__STDC_FORMAT_MACROS=1 \
+	-I../ $(ARCH) #--compiler-options '-Wall'
 
 CUDALINK = -lcuda
 CPP = g++
@@ -38,16 +32,21 @@ CCFLAGS = $(OPTI) $(WARN) $(STD) $(DEBUG)
 
 .SUFFIXES:	.cu .cubin .ptx .bin
 
-hybridtaus-cuda: hybridtaus-cuda.cu util.c
-	${NVCC} -o $@ hybridtaus-cuda.cu util.c \
+hybridtaus-cuda: hybridtaus-cuda.cu util.cu ../mtgp32-fast.c
+	${NVCC} -o $@ hybridtaus-cuda.cu util.cu ../mtgp32-fast.c \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
-warp-cuda: warp-cuda.cu util.c
-	${NVCC} -o $@ warp-cuda.cu util.c \
+warp-cuda: warp-cuda.cu util.cu ../mtgp32-fast.c
+	${NVCC} -o $@ warp-cuda.cu util.cu ../mtgp32-fast.c \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
-warp: warp.c
-	${CC} -o $@ warp.c
+mtgp32-cuda-tex: mtgp32-cuda-tex.cu util.cu \
+	mtgp32dc-param-11213.c ../mtgp32-fast.c
+	${NVCC} -o $@ mtgp32-cuda-tex.cu util.cu \
+	mtgp32dc-param-11213.c ../mtgp32-fast.c ${CUDALINK}
+
+warp: warp.cpp
+	${CPP} -o $@ warp.cpp -lntl -lgf2x
 
 .cu.ptx:
 	${NVCC} ${CUTILINC} -ptx $<
@@ -57,12 +56,6 @@ warp: warp.c
 
 .cu.bin:
 	${NVCC} ${ARCH} ${CUTILINC} -o $@ $< ${CUTILLIB} ${CUDALINK}
-
-.c.o:
-	${CC} ${CCFLAGS} -c $<
-
-.cpp.o:
-	${CPP} ${CCFLAGS} -c $<
 
 clean:
 	rm -f *.o *~
