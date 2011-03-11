@@ -36,13 +36,26 @@ hybridtaus-cuda: hybridtaus-cuda.cu util.cu ../mtgp32-fast.c
 	${NVCC} -o $@ hybridtaus-cuda.cu util.cu ../mtgp32-fast.c \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
+hybridtaus-cuda-mask: hybridtaus-cuda.cu util.cu ../mtgp32-fast.c
+	${NVCC} -o $@ -DFLOAT_MASK hybridtaus-cuda.cu util.cu ../mtgp32-fast.c \
+	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
+
 warp-cuda: warp-cuda.cu util.cu ../mtgp32-fast.c
 	${NVCC} -o $@ warp-cuda.cu util.cu ../mtgp32-fast.c \
+	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
+
+warp-cuda-mask: warp-cuda.cu util.cu ../mtgp32-fast.c
+	${NVCC} -o $@ -DFLOAT_MASK warp-cuda.cu util.cu ../mtgp32-fast.c \
 	 ${CUTILINC} ${CUTILLIB} ${CUDALINK}
 
 mtgp32-cuda-tex: mtgp32-cuda-tex.cu util.cu \
 	mtgp32dc-param-11213.c ../mtgp32-fast.c
 	${NVCC} -o $@ mtgp32-cuda-tex.cu util.cu \
+	mtgp32dc-param-11213.c ../mtgp32-fast.c ${CUDALINK}
+
+curand: curand.cu util.cu \
+	mtgp32dc-param-11213.c ../mtgp32-fast.c
+	${NVCC} -o $@ curand.cu util.cu \
 	mtgp32dc-param-11213.c ../mtgp32-fast.c ${CUDALINK}
 
 warp: warp.cpp

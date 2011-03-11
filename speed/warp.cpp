@@ -75,7 +75,7 @@ void check_polynomial(uint32_t status[]) {
     for (int i = 0; i < 32; i++) {
 	for (int j = 0; j < mexp * 2; j++) {
 	    generate(status, out);
-	    vec[j] = (out[k] >> i) & 1;
+	    vec[j] = (status[k] >> i) & 1;
 	}
 	MinPolySeq(minpoly, vec, mexp);
 	cout << dec << k << ":";

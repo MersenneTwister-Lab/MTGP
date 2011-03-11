@@ -99,6 +99,27 @@ __global__ void warp_kernel(uint32_t* d_data, int size,
     }
 }
 
+__global__ void float_kernel(float* d_data, int size,
+			    const uint32_t seed[])
+{
+    const int bid = blockIdx.x;
+    const int tid = threadIdx.x;
+    unsigned rngRegs[WarpStandard_REG_COUNT];
+    uint32_t r;
+
+    WarpStandard_LoadState(seed, rngRegs, shmem);
+
+    for (int i = 0; i < size; i += blockDim.x) {
+	r = WarpStandard_Generate(rngRegs, shmem);
+#if defined(FLOAT_MASK)
+	r = (r >> 9) | 0x3f800000U;
+	d_data[size * bid + i + tid] = __int_as_float(r) - 1.0f;
+#else
+	d_data[size * bid + i + tid] = 2.3283064365387e-10 * r;
+#endif
+    }
+}
+
 __global__ void warp_reduce_kernel(uint32_t* d_data, int size,
 				   const uint32_t seed[])
 {
@@ -113,6 +134,29 @@ __global__ void warp_reduce_kernel(uint32_t* d_data, int size,
 	xsum ^= WarpStandard_Generate(rngRegs, shmem);
     }
     d_data[blockDim.x * bid + tid] = xsum;
+}
+
+__global__ void float_reduce(float * d_data, int size,
+			     const uint32_t seed[])
+{
+    const int bid = blockIdx.x;
+    const int tid = threadIdx.x;
+    unsigned rngRegs[WarpStandard_REG_COUNT];
+    float sum = 0;
+    uint32_t r;
+
+    WarpStandard_LoadState(seed, rngRegs, shmem);
+
+    for (int i = 0; i < size; i += blockDim.x) {
+	r = WarpStandard_Generate(rngRegs, shmem);
+#if defined(FLOAT_MASK)
+	r = (r >> 9) | 0x3f800000U;
+	sum += __int_as_float(r) - 1.0f;
+#else
+	sum += 2.3283064365387e-10 * r;
+#endif
+    }
+    d_data[blockDim.x * bid + tid] = sum;
 }
 
 /**
@@ -195,6 +239,82 @@ void make_warp_random(int num_data,
     ccudaFree(d_data);
     ccudaFree(d_seed);
 }
+
+void make_float_random(int num_data,
+		      int block_num) {
+    float* d_data;
+    uint32_t* d_seed;
+    float* h_data;
+    uint32_t* h_seed;
+    cudaError_t e;
+    unsigned rngsPerBlock = thread_num / WarpStandard_K;
+    unsigned sharedMemBytesPerBlock
+	= rngsPerBlock * WarpStandard_SHMEM_WORDS * 4;
+    int seed_size = rngsPerBlock * block_num * 32;
+    uint32_t tmp;
+
+    printf("generating unsigned random numbers.\n");
+    ccudaMalloc((void**)&d_data, sizeof(float) * num_data);
+    ccudaMalloc((void**)&d_seed, sizeof(uint32_t) * seed_size);
+    /* cutCreateTimer(&timer); */
+    float elapsed_time_ms=0.0f;
+    cudaEvent_t start, stop;
+    ccudaEventCreate(&start);
+    ccudaEventCreate(&stop);
+
+    h_data = (float *) malloc(sizeof(float) * num_data);
+    h_seed = (uint32_t *) malloc(sizeof(uint32_t) * seed_size);
+    if (h_data == NULL || h_seed == NULL) {
+	printf("failure in allocating host memory for output data.\n");
+	exit(1);
+    }
+    memcpy(h_seed, WarpStandard_TEST_DATA, sizeof(uint32_t) * 32);
+    tmp = h_seed[17];
+    for (int i = 0; i < seed_size - 35; i++) {
+	tmp = (tmp >> 11) * h_seed[i] + i;
+	h_seed[i + 32] = tmp ^ (tmp << 3);
+    }
+    ccudaMemcpy(d_seed, h_seed, sizeof(uint32_t) * seed_size,
+		cudaMemcpyHostToDevice);
+    /* cutStartTimer(timer); */
+    ccudaEventRecord(start, 0);
+    if (cudaGetLastError() != cudaSuccess) {
+	printf("error has been occured before kernel call.\n");
+	exit(1);
+    }
+
+    /* kernel call */
+    float_kernel<<< block_num, thread_num, sharedMemBytesPerBlock>>>
+	(d_data, num_data / block_num, d_seed);
+    ccudaEventRecord(stop, 0);
+    ccudaEventSynchronize(stop);
+    ccudaThreadSynchronize();
+
+    e = cudaGetLastError();
+    if (e != cudaSuccess) {
+	printf("failure in kernel call.\n%s\n", cudaGetErrorString(e));
+	exit(1);
+    }
+    /* cutStopTimer(timer); */
+
+    ccudaMemcpy(h_data, d_data,
+	       sizeof(float) * num_data, cudaMemcpyDeviceToHost);
+    ccudaEventElapsedTime(&elapsed_time_ms, start, stop);
+    print_float_array(h_data, num_data, block_num);
+    printf("generated numbers: %d\n", num_data);
+    printf("Processing time: %f (ms)\n", elapsed_time_ms);
+    printf("Samples per second: %E \n", num_data / (elapsed_time_ms * 0.001));
+    /* cutDeleteTimer(timer); */
+    ccudaEventDestroy(start);
+    ccudaEventDestroy(stop);
+
+    //free memories
+    free(h_data);
+    free(h_seed);
+    ccudaFree(d_data);
+    ccudaFree(d_seed);
+}
+
 /**
  * host function.
  * This function calls corresponding kernel function.
@@ -274,6 +394,85 @@ void make_warp_reduced(int num_data,
     ccudaFree(d_data);
     ccudaFree(d_seed);
 }
+/**
+ * host function.
+ * This function calls corresponding kernel function.
+ *
+ * @param[in] num_data number of data to be generated.
+ */
+void make_float_reduced(int num_data,
+			int block_num) {
+    float* d_data;
+    uint32_t* d_seed;
+    float* h_data;
+    uint32_t* h_seed;
+    cudaError_t e;
+    unsigned rngsPerBlock = thread_num / WarpStandard_K;
+    unsigned sharedMemBytesPerBlock
+	= rngsPerBlock * WarpStandard_SHMEM_WORDS * 4;
+    int seed_size = rngsPerBlock * block_num * 32;
+    int all_threads = block_num * thread_num;
+    uint32_t tmp;
+
+    printf("generating unsigned random numbers.\n");
+    cudaMalloc((void**)&d_data, sizeof(float) * all_threads);
+    cudaMalloc((void**)&d_seed, sizeof(uint32_t) * seed_size);
+    /* cutCreateTimer(&timer); */
+    float elapsed_time_ms=0.0f;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    h_data = (float *) malloc(sizeof(float) * all_threads);
+    h_seed = (uint32_t *) malloc(sizeof(uint32_t) * seed_size);
+    if (h_data == NULL || h_seed == NULL) {
+	printf("failure in allocating host memory for output data.\n");
+	exit(1);
+    }
+    memcpy(h_seed, WarpStandard_TEST_DATA, sizeof(uint32_t) * 32);
+    tmp = h_seed[17];
+    for (int i = 0; i < seed_size -35; i++) {
+	tmp = (tmp >> 11) * h_seed[i] + i;
+	h_seed[i + 32] = tmp ^ (tmp << 3);
+    }
+    cudaMemcpy(d_seed, h_seed, sizeof(uint32_t) * seed_size,
+	       cudaMemcpyHostToDevice);
+    /* cutStartTimer(timer); */
+    cudaEventRecord(start, 0);
+    if (cudaGetLastError() != cudaSuccess) {
+	printf("error has been occured before kernel call.\n");
+	exit(1);
+    }
+
+    /* kernel call */
+    float_reduce<<< block_num, thread_num, sharedMemBytesPerBlock>>>
+	(d_data, num_data / block_num, d_seed);
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaThreadSynchronize();
+
+    e = cudaGetLastError();
+    if (e != cudaSuccess) {
+	printf("failure in kernel call.\n%s\n", cudaGetErrorString(e));
+	exit(1);
+    }
+    /* cutStopTimer(timer); */
+    cudaEventElapsedTime(&elapsed_time_ms, start, stop);
+    cudaMemcpy(h_data, d_data, sizeof(uint32_t) * all_threads,
+	       cudaMemcpyDeviceToHost);
+    printf("reduce generation numbers: %d\n", num_data);
+    printf("Processing time: %f (ms)\n", elapsed_time_ms);
+    printf("Samples per second: %E \n", num_data / (elapsed_time_ms * 0.001));
+    /* cutDeleteTimer(timer); */
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    //free memories
+    free(h_data);
+    free(h_seed);
+    ccudaFree(d_data);
+    ccudaFree(d_seed);
+}
 
 int main(int argc, char** argv)
 {
@@ -311,6 +510,6 @@ int main(int argc, char** argv)
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
-    make_warp_random(num_data, block_num);
-    make_warp_reduced(num_data, block_num);
+    make_float_random(num_data, block_num);
+    make_float_reduced(num_data, block_num);
 }

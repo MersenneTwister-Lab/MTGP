@@ -1,0 +1,3902 @@
+bigcrush-param seed is 0
+param1:
+mexp:3217
+pos:32
+sh1:13
+sh2:4
+mask:ffff8000
+tbl[00]:00000000
+tbl[01]:26e35014
+tbl[02]:4a162c60
+tbl[03]:6cf57c74
+tbl[04]:09700007
+tbl[05]:2f935013
+tbl[06]:43662c67
+tbl[07]:65857c73
+tbl[08]:0000f440
+tbl[09]:26e3a454
+tbl[10]:4a16d820
+tbl[11]:6cf58834
+tbl[12]:0970f447
+tbl[13]:2f93a453
+tbl[14]:4366d827
+tbl[15]:65858833
+tmp_tbl[00]:00000000
+tmp_tbl[01]:0042cfff
+tmp_tbl[02]:00201016
+tmp_tbl[03]:0062dfe9
+tmp_tbl[04]:4100d80e
+tmp_tbl[05]:414217f1
+tmp_tbl[06]:4120c818
+tmp_tbl[07]:416207e7
+tmp_tbl[08]:c08009e4
+tmp_tbl[09]:c0c2c61b
+tmp_tbl[10]:c0a019f2
+tmp_tbl[11]:c0e2d60d
+tmp_tbl[12]:8180d1ea
+tmp_tbl[13]:81c21e15
+tmp_tbl[14]:81a0c1fc
+tmp_tbl[15]:81e20e03
+flt_tbl[00]:3f800000
+flt_tbl[01]:3f802167
+flt_tbl[02]:3f801008
+flt_tbl[03]:3f80316f
+flt_tbl[04]:3fa0806c
+flt_tbl[05]:3fa0a10b
+flt_tbl[06]:3fa09064
+flt_tbl[07]:3fa0b103
+flt_tbl[08]:3fe04004
+flt_tbl[09]:3fe06163
+flt_tbl[10]:3fe0500c
+flt_tbl[11]:3fe0716b
+flt_tbl[12]:3fc0c068
+flt_tbl[13]:3fc0e10f
+flt_tbl[14]:3fc0d060
+flt_tbl[15]:3fc0f107
+param2:
+mexp:3217
+pos:23
+sh1:13
+sh2:4
+mask:ffff8000
+tbl[00]:00000000
+tbl[01]:8f41fd59
+tbl[02]:31dd93f9
+tbl[03]:be9c6ea0
+tbl[04]:37100018
+tbl[05]:b851fd41
+tbl[06]:06cd93e1
+tbl[07]:898c6eb8
+tbl[08]:0000aa1d
+tbl[09]:8f415744
+tbl[10]:31dd39e4
+tbl[11]:be9cc4bd
+tbl[12]:3710aa05
+tbl[13]:b851575c
+tbl[14]:06cd39fc
+tbl[15]:898cc4a5
+tmp_tbl[00]:00000000
+tmp_tbl[01]:005610de
+tmp_tbl[02]:00111e1f
+tmp_tbl[03]:00470ec1
+tmp_tbl[04]:00010013
+tmp_tbl[05]:005710cd
+tmp_tbl[06]:00101e0c
+tmp_tbl[07]:00460ed2
+tmp_tbl[08]:0803880a
+tmp_tbl[09]:085598d4
+tmp_tbl[10]:08129615
+tmp_tbl[11]:084486cb
+tmp_tbl[12]:08028819
+tmp_tbl[13]:085498c7
+tmp_tbl[14]:08139606
+tmp_tbl[15]:084586d8
+flt_tbl[00]:3f800000
+flt_tbl[01]:3f802b08
+flt_tbl[02]:3f80088f
+flt_tbl[03]:3f802387
+flt_tbl[04]:3f800080
+flt_tbl[05]:3f802b88
+flt_tbl[06]:3f80080f
+flt_tbl[07]:3f802307
+flt_tbl[08]:3f8401c4
+flt_tbl[09]:3f842acc
+flt_tbl[10]:3f84094b
+flt_tbl[11]:3f842243
+flt_tbl[12]:3f840144
+flt_tbl[13]:3f842a4c
+flt_tbl[14]:3f8409cb
+flt_tbl[15]:3f8422c3
+mtgp32:3217:3000000000000000000000000000000000000000
+mtgp32:3217:3100025aff7f0000883ac03d3300000000000000
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                 Starting BigCrush
+                 Version: TestU01 1.2.3
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+***********************************************************
+Test smarsa_SerialOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N =  1,  n = 1000000000,  r =  0,   d =  256,   t =  3,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =           16777216
+       Expected number per cell =   59.604645
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare: 
+       Delta =     1,    Mu =   0.0083558402,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 16711680
+Value of the statistic                : 1.67e+7
+p-value of test                       :    0.20
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:58.81
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_SerialOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N =  1,  n = 1000000000,  r = 22,   d =  256,   t =  3,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =           16777216
+       Expected number per cell =   59.604645
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare: 
+       Delta =     1,    Mu =   0.0083558402,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 16711680
+Value of the statistic                : 1.67e+7
+p-value of test                       :    0.26
+
+
+-----------------------------------------------
+CPU time used                    :  00:02:05.18
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r =  0,   d = 2097152,   t =  2,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1400
+p-value of test                       :    0.17
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334520
+  j =  1                              :        599997200
+  j =  2                              :             1400
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:04:03.37
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r =  9,   d = 2097152,   t =  2,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1301
+p-value of test                       :    0.96
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334421
+  j =  1                              :        599997398
+  j =  2                              :             1301
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:04:06.34
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r =  0,   d = 16384,   t =  3,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1381
+p-value of test                       :    0.33
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334501
+  j =  1                              :        599997238
+  j =  2                              :             1381
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:16.07
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r = 16,   d = 16384,   t =  3,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1385
+p-value of test                       :    0.29
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334505
+  j =  1                              :        599997230
+  j =  2                              :             1385
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:17.72
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r =  0,   d =   64,   t =  7,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1344
+p-value of test                       :    0.70
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334464
+  j =  1                              :        599997312
+  j =  2                              :             1344
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:27.01
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r = 24,   d =   64,   t =  7,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1328
+p-value of test                       :    0.83
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334448
+  j =  1                              :        599997344
+  j =  2                              :             1328
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:21.51
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r =  0,   d =    8,   t = 14,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1399
+p-value of test                       :    0.18
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334519
+  j =  1                              :        599997202
+  j =  2                              :             1399
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:26.32
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r = 27,   d =    8,   t = 14,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1312
+p-value of test                       :    0.92
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334432
+  j =  1                              :        599997376
+  j =  2                              :             1312
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:19.53
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r =  0,   d =    4,   t = 21,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1403
+p-value of test                       :    0.15
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334523
+  j =  1                              :        599997194
+  j =  2                              :             1403
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:11.03
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 30,  n = 20000000,  r = 28,   d =    4,   t = 21,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      4398046511104
+       Expected number per cell =  1 /  219902.33
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  219902.33
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :     1364.24
+Observed number of collisions         :     1371
+p-value of test                       :    0.43
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :  131940795334491
+  j =  1                              :        599997258
+  j =  2                              :             1371
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:06:11.13
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 100,  n = 10000000,  r =  0,    d = 2147483648,    t = 2,    p = 1
+
+
+      Number of cells = d^t = 4611686018427387904
+      Lambda = Poisson mean =      54.2101
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    5421.01
+Total observed number                 :    5324
+p-value of test                       :    0.91
+
+
+-----------------------------------------------
+CPU time used                    :  00:04:52.17
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 20000000,  r =  0,    d = 2097152,    t = 3,    p = 1
+
+
+      Number of cells = d^t = 9223372036854775808
+      Lambda = Poisson mean =     216.8404
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    4336.81
+Total observed number                 :    4400
+p-value of test                       :    0.17
+
+
+-----------------------------------------------
+CPU time used                    :  00:02:06.85
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 30000000,  r = 14,    d = 65536,    t = 4,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     365.9182
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    7318.36
+Total observed number                 :    7277
+p-value of test                       :    0.68
+
+
+-----------------------------------------------
+CPU time used                    :  00:03:29.89
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 20000000,  r =  0,    d = 512,    t = 7,    p = 1
+
+
+      Number of cells = d^t = 9223372036854775808
+      Lambda = Poisson mean =     216.8404
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    4336.81
+Total observed number                 :    4293
+p-value of test                       :    0.74
+
+
+-----------------------------------------------
+CPU time used                    :  00:02:30.81
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 20000000,  r =  7,    d = 512,    t = 7,    p = 1
+
+
+      Number of cells = d^t = 9223372036854775808
+      Lambda = Poisson mean =     216.8404
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    4336.81
+Total observed number                 :    4404
+p-value of test                       :    0.16
+
+
+-----------------------------------------------
+CPU time used                    :  00:02:39.22
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 30000000,  r = 14,    d = 256,    t = 8,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     365.9182
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    7318.36
+Total observed number                 :    7277
+p-value of test                       :    0.68
+
+
+-----------------------------------------------
+CPU time used                    :  00:04:13.47
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 30000000,  r = 22,    d = 256,    t = 8,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     365.9182
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    7318.36
+Total observed number                 :    7295
+p-value of test                       :    0.60
+
+
+-----------------------------------------------
+CPU time used                    :  00:04:13.07
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 30000000,  r =  0,    d = 16,    t = 16,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     365.9182
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    7318.36
+Total observed number                 :    7418
+p-value of test                       :    0.12
+
+
+-----------------------------------------------
+CPU time used                    :  00:05:11.52
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N = 20,  n = 30000000,  r = 26,    d = 16,    t = 16,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     365.9182
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    7318.36
+Total observed number                 :    7386
+p-value of test                       :    0.22
+
+
+-----------------------------------------------
+CPU time used                    :  00:05:40.40
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+snpair_ClosePairs test:
+-----------------------------------------------
+   N = 30,  n = 6000000,  r =  0,  t = 3,  p = 0,  m = 30,  Torus =  TRUE
+
+
+---------------------------------------
+Test based on the 2 nearest points (NP):
+
+Stat. AD on the N values (NP)         :    0.52
+p-value of test                       :    0.72
+
+
+A2 test based on the spacings between the
+   successive jump times of process Y_n(t):
+
+A2 test on the values of A2 (m-NP)    :    0.67
+p-value of test                       :    0.58
+
+Test on the Nm values of W_{n,i}(mNP1):    1.21
+p-value of test                       :    0.26
+
+Test on the jump times of Y
+   (superposition of Yn):
+
+Expected number of jumps of Y = mN    :     900
+Number of jumps of Y                  :     946
+p-value of test                       :    0.07
+
+Stat. AD (mNP2)                       :    0.30
+p-value of test                       :    0.94
+
+Stat. AD after spacings (mNP2-S)      :    2.15
+p-value of test                       :    0.08
+
+-----------------------------------------------
+CPU time used                    :  00:03:18.28
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+snpair_ClosePairs test:
+-----------------------------------------------
+   N = 20,  n = 4000000,  r =  0,  t = 5,  p = 0,  m = 30,  Torus =  TRUE
+
+
+---------------------------------------
+Test based on the 2 nearest points (NP):
+
+Stat. AD on the N values (NP)         :    0.51
+p-value of test                       :    0.73
+
+
+A2 test based on the spacings between the
+   successive jump times of process Y_n(t):
+
+A2 test on the values of A2 (m-NP)    :    0.50
+p-value of test                       :    0.75
+
+Test on the Nm values of W_{n,i}(mNP1):    0.54
+p-value of test                       :    0.71
+
+Test on the jump times of Y
+   (superposition of Yn):
+
+Expected number of jumps of Y = mN    :     600
+Number of jumps of Y                  :     596
+p-value of test                       :    0.55
+
+Stat. AD (mNP2)                       :    0.63
+p-value of test                       :    0.62
+
+Stat. AD after spacings (mNP2-S)      :    0.67
+p-value of test                       :    0.59
+
+-----------------------------------------------
+CPU time used                    :  00:02:04.72
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+snpair_ClosePairs test:
+-----------------------------------------------
+   N = 10,  n = 3000000,  r =  0,  t = 9,  p = 0,  m = 30,  Torus =  TRUE
+
+
+---------------------------------------
+Test based on the 2 nearest points (NP):
+
+Stat. AD on the N values (NP)         :    1.34
+p-value of test                       :    0.22
+
+
+A2 test based on the spacings between the
+   successive jump times of process Y_n(t):
+
+A2 test on the values of A2 (m-NP)    :    3.49
+p-value of test                       :    0.02
+
+Test on the Nm values of W_{n,i}(mNP1):    0.81
+p-value of test                       :    0.48
+
+Test on the jump times of Y
+   (superposition of Yn):
+
+Expected number of jumps of Y = mN    :     300
+Number of jumps of Y                  :     320
+p-value of test                       :    0.13
+
+Stat. AD (mNP2)                       :    0.51
+p-value of test                       :    0.74
+
+Stat. AD after spacings (mNP2-S)      :    1.67
+p-value of test                       :    0.14
+
+-----------------------------------------------
+CPU time used                    :  00:03:17.14
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+snpair_ClosePairs test:
+-----------------------------------------------
+   N =  5,  n = 2000000,  r =  0,  t = 16,  p = 0,  m = 30,  Torus =  TRUE
+
+
+---------------------------------------
+Test based on the 2 nearest points (NP):
+
+Stat. AD on the N values (NP)         :    0.98
+p-value of test                       :    0.36
+
+
+A2 test based on the spacings between the
+   successive jump times of process Y_n(t):
+
+A2 test on the values of A2 (m-NP)    :    0.48
+p-value of test                       :    0.76
+
+Test on the Nm values of W_{n,i}(mNP1):    1.77
+p-value of test                       :    0.12
+
+Test on the jump times of Y
+   (superposition of Yn):
+
+Expected number of jumps of Y = mN    :     150
+Number of jumps of Y                  :     166
+p-value of test                       :    0.10
+
+Stat. AD (mNP2)                       :    1.23
+p-value of test                       :    0.26
+
+Stat. AD after spacings (mNP2-S)      :    2.37
+p-value of test                       :    0.06
+
+-----------------------------------------------
+CPU time used                    :  00:03:40.67
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 400000000,  r =  0,   d =    8,   k =    8
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    7
+Chi-square statistic                  :   10.45
+p-value of test                       :    0.16
+
+-----------------------------------------------
+CPU time used                    :  00:01:20.18
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 400000000,  r = 27,   d =    8,   k =    8
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    7
+Chi-square statistic                  :    3.52
+p-value of test                       :    0.83
+
+-----------------------------------------------
+CPU time used                    :  00:01:31.50
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r =  0,   d =   32,   k =   32
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   18
+Chi-square statistic                  :   14.87
+p-value of test                       :    0.67
+
+-----------------------------------------------
+CPU time used                    :  00:01:19.23
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r = 25,   d =   32,   k =   32
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   18
+Chi-square statistic                  :   25.45
+p-value of test                       :    0.11
+
+-----------------------------------------------
+CPU time used                    :  00:01:30.69
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 200000000,  r =  0,   d =    8
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   54
+Chi-square statistic                  :   45.99
+p-value of test                       :    0.77
+
+-----------------------------------------------
+CPU time used                    :  00:01:41.60
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 200000000,  r = 10,   d =    8
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   54
+Chi-square statistic                  :   67.11
+p-value of test                       :    0.11
+
+-----------------------------------------------
+CPU time used                    :  00:01:58.77
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 200000000,  r = 20,   d =    8
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   54
+Chi-square statistic                  :   50.04
+p-value of test                       :    0.63
+
+-----------------------------------------------
+CPU time used                    :  00:01:58.82
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 200000000,  r = 27,   d =    8
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   54
+Chi-square statistic                  :   65.75
+p-value of test                       :    0.13
+
+-----------------------------------------------
+CPU time used                    :  00:01:58.82
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r =  0,   Alpha =        0,   Beta  =   0.0625
+
+
+-----------------------------------------------
+Number of degrees of freedom          :  232
+Chi-square statistic                  :  288.50
+p-value of test                       :  6.8e-3
+
+-----------------------------------------------
+CPU time used                    :  00:02:07.93
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 300000000,  r = 25,   Alpha =        0,   Beta  =  0.03125
+
+
+-----------------------------------------------
+Number of degrees of freedom          :  434
+Chi-square statistic                  :  430.49
+p-value of test                       :    0.54
+
+-----------------------------------------------
+CPU time used                    :  00:02:53.89
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r =  0,   Alpha =        0,   Beta  = 0.0078125
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 1437
+Chi-square statistic                  : 1384.34
+p-value of test                       :    0.84
+
+-----------------------------------------------
+CPU time used                    :  00:03:09.30
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r = 20,   Alpha =        0,   Beta  = 0.000976562
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 7046
+Chi-square statistic                  : 7022.08
+p-value of test                       :    0.58
+
+-----------------------------------------------
+CPU time used                    :  00:02:57.13
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_Run test:
+-----------------------------------------------
+   N =  5,  n = 1000000000,  r =  0,   Up = FALSE
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.41
+p-value of test                       :    0.14
+
+Kolmogorov-Smirnov- statistic = D-    : 1.36e-3
+p-value of test                       :    0.9986
+
+Anderson-Darling statistic = A2       :    2.71
+p-value of test                       :    0.04
+
+Test on the sum of all N observations
+Number of degrees of freedom          :   30
+Chi-square statistic                  :   16.32
+p-value of test                       :    0.98
+
+-----------------------------------------------
+CPU time used                    :  00:01:45.77
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_Run test:
+-----------------------------------------------
+   N = 10,  n = 1000000000,  r = 15,   Up =  TRUE
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.19
+p-value of test                       :    0.42
+
+Kolmogorov-Smirnov- statistic = D-    :   0.091
+p-value of test                       :    0.80
+
+Anderson-Darling statistic = A2       :    0.34
+p-value of test                       :    0.90
+
+Test on the sum of all N observations
+Number of degrees of freedom          :   60
+Chi-square statistic                  :   60.27
+p-value of test                       :    0.47
+
+-----------------------------------------------
+CPU time used                    :  00:04:10.09
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_Permutation calling smultin_Multinomial
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  1,  n = 1000000000,  r =  5,   t =  3,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =                  6
+       Expected number per cell =  1.6666667e+08
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare: 
+       Delta =     1,    Mu =  2.5000002e-09,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          :    5
+Value of the statistic                :    3.37
+p-value of test                       :    0.64
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:04.09
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_Permutation calling smultin_Multinomial
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  1,  n = 1000000000,  r =  5,   t =  5,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =                120
+       Expected number per cell =   8333333.3
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare: 
+       Delta =     1,    Mu =  5.9500005e-08,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          :  119
+Value of the statistic                :  115.24
+p-value of test                       :    0.58
+
+
+-----------------------------------------------
+CPU time used                    :  00:02:07.57
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_Permutation calling smultin_Multinomial
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r =  5,   t =  7,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =               5040
+       Expected number per cell =   99206.349
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare: 
+       Delta =     1,    Mu =  5.0390004e-06,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 5039
+Value of the statistic                : 4991.49
+p-value of test                       :    0.68
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:43.87
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_Permutation calling smultin_Multinomial
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r = 10,   t = 10,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =            3628800
+       Expected number per cell =    137.7866
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare: 
+       Delta =     1,    Mu =   0.0036287993,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 3628799
+Value of the statistic                : 3.62e+6
+p-value of test                       :    0.98
+
+
+-----------------------------------------------
+CPU time used                    :  00:03:38.85
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_CollisionPermut calling smultin_Multinomial
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N = 20,  n = 20000000,  r =  0,   t = 14,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =        87178291200
+       Expected number per cell =  1 /  4358.9146
+       EColl = n^2 / (2k) =   2294.14912
+       Hashing =   TRUE
+
+       Collision test,    Mu =      2293.9736,    Sigma =    47.8841
+
+-----------------------------------------------
+Test Results for Collisions
+
+For the total number of collisions, we use
+      the Poisson approximation:
+Expected number of collisions = N*Mu  :    45879.47
+Observed number of collisions         :    45834
+p-value of test                       :    0.58
+
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :    1743165869834
+  j =  1                              :        399908336
+  j =  2                              :            45826
+  j =  3                              :                4
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:05:28.23
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_CollisionPermut calling smultin_Multinomial
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N = 20,  n = 20000000,  r = 10,   t = 14,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =        87178291200
+       Expected number per cell =  1 /  4358.9146
+       EColl = n^2 / (2k) =   2294.14912
+       Hashing =   TRUE
+
+       Collision test,    Mu =      2293.9736,    Sigma =    47.8841
+
+-----------------------------------------------
+Test Results for Collisions
+
+For the total number of collisions, we use
+      the Poisson approximation:
+Expected number of collisions = N*Mu  :    45879.47
+Observed number of collisions         :    46195
+p-value of test                       :    0.07
+
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :    1743165870195
+  j =  1                              :        399907616
+  j =  2                              :            46183
+  j =  3                              :                6
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:05:40.94
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N = 40,  n = 10000000,  r =  0,   d = 100000,   t =  8
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Test results for chi2 with 99999 degrees of freedom:
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.053
+p-value of test                       :    0.77
+
+Kolmogorov-Smirnov- statistic = D-    :    0.11
+p-value of test                       :    0.34
+
+Anderson-Darling statistic = A2       :    0.49
+p-value of test                       :    0.75
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 3999960
+Chi-square statistic                  : 4.00e+6
+p-value of test                       :    0.29
+
+
+-----------------------------------------------
+Test results for Anderson-Darling:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.11
+p-value of test                       :    0.36
+
+Kolmogorov-Smirnov- statistic = D-    :   0.062
+p-value of test                       :    0.71
+
+Anderson-Darling statistic = A2       :    0.71
+p-value of test                       :    0.55
+
+
+-----------------------------------------------
+CPU time used                    :  00:03:50.44
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N = 30,  n = 10000000,  r =  0,   d = 100000,   t = 16
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Test results for chi2 with 99999 degrees of freedom:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.24
+p-value of test                       :    0.02
+
+Kolmogorov-Smirnov- statistic = D-    :   0.026
+p-value of test                       :    0.95
+
+Anderson-Darling statistic = A2       :    2.24
+p-value of test                       :    0.07
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 2999970
+Chi-square statistic                  : 3.00e+6
+p-value of test                       :    0.96
+
+
+-----------------------------------------------
+Test results for Anderson-Darling:
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.044
+p-value of test                       :    0.86
+
+Kolmogorov-Smirnov- statistic = D-    :    0.13
+p-value of test                       :    0.33
+
+Anderson-Darling statistic = A2       :    0.57
+p-value of test                       :    0.67
+
+
+-----------------------------------------------
+CPU time used                    :  00:03:27.54
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N = 20,  n = 10000000,  r =  0,   d = 100000,   t = 24
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Test results for chi2 with 99999 degrees of freedom:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.11
+p-value of test                       :    0.57
+
+Kolmogorov-Smirnov- statistic = D-    :    0.18
+p-value of test                       :    0.25
+
+Anderson-Darling statistic = A2       :    0.60
+p-value of test                       :    0.65
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 1999980
+Chi-square statistic                  : 2.00e+6
+p-value of test                       :    0.49
+
+
+-----------------------------------------------
+Test results for Anderson-Darling:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.16
+p-value of test                       :    0.34
+
+Kolmogorov-Smirnov- statistic = D-    :    0.11
+p-value of test                       :    0.58
+
+Anderson-Darling statistic = A2       :    0.71
+p-value of test                       :    0.55
+
+
+-----------------------------------------------
+CPU time used                    :  00:02:41.22
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N = 20,  n = 10000000,  r =  0,   d = 100000,   t = 32
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Test results for chi2 with 99999 degrees of freedom:
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.081
+p-value of test                       :    0.73
+
+Kolmogorov-Smirnov- statistic = D-    :    0.16
+p-value of test                       :    0.33
+
+Anderson-Darling statistic = A2       :    0.46
+p-value of test                       :    0.79
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 1999980
+Chi-square statistic                  : 2.00e+6
+p-value of test                       :    0.26
+
+
+-----------------------------------------------
+Test results for Anderson-Darling:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.20
+p-value of test                       :    0.17
+
+Kolmogorov-Smirnov- statistic = D-    :   0.067
+p-value of test                       :    0.80
+
+Anderson-Darling statistic = A2       :    0.87
+p-value of test                       :    0.43
+
+
+-----------------------------------------------
+CPU time used                    :  00:03:03.23
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SampleProd test:
+-----------------------------------------------
+   N = 40,  n = 10000000,  r =  0,   t = 8
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.017
+p-value of test                       :    0.97
+
+Kolmogorov-Smirnov- statistic = D-    :    0.20
+p-value of test                       :    0.04
+
+Anderson-Darling statistic = A2       :    2.43
+p-value of test                       :    0.05
+
+-----------------------------------------------
+CPU time used                    :  00:03:09.45
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SampleProd test:
+-----------------------------------------------
+   N = 20,  n = 10000000,  r =  0,   t = 16
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.18
+p-value of test                       :    0.26
+
+Kolmogorov-Smirnov- statistic = D-    :   0.048
+p-value of test                       :    0.88
+
+Anderson-Darling statistic = A2       :    1.01
+p-value of test                       :    0.35
+
+-----------------------------------------------
+CPU time used                    :  00:02:15.03
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SampleProd test:
+-----------------------------------------------
+   N = 20,  n = 10000000,  r =  0,   t = 24
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.099
+p-value of test                       :    0.63
+
+Kolmogorov-Smirnov- statistic = D-    :    0.19
+p-value of test                       :    0.22
+
+Anderson-Darling statistic = A2       :    0.78
+p-value of test                       :    0.50
+
+-----------------------------------------------
+CPU time used                    :  00:02:54.45
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SampleMean test:
+-----------------------------------------------
+   N = 20000000,  n = 30,  r =  0
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    : 2.39e-4
+p-value of test                       :    0.10
+
+Kolmogorov-Smirnov- statistic = D-    : 6.00e-5
+p-value of test                       :    0.87
+
+Anderson-Darling statistic = A2       :    0.86
+p-value of test                       :    0.44
+
+-----------------------------------------------
+CPU time used                    :  00:00:40.70
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SampleMean test:
+-----------------------------------------------
+   N = 20000000,  n = 30,  r = 10
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    : 1.61e-4
+p-value of test                       :    0.35
+
+Kolmogorov-Smirnov- statistic = D-    : 1.85e-4
+p-value of test                       :    0.26
+
+Anderson-Darling statistic = A2       :    0.86
+p-value of test                       :    0.44
+
+-----------------------------------------------
+CPU time used                    :  00:00:42.17
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SampleCorr test:
+-----------------------------------------------
+   N =  1,  n = 2000000000,  r =  0,   k = 1
+
+
+-----------------------------------------------
+Normal statistic                      :   -0.87
+p-value of test                       :    0.81
+
+-----------------------------------------------
+CPU time used                    :  00:00:32.89
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SampleCorr test:
+-----------------------------------------------
+   N =  1,  n = 2000000000,  r =  0,   k = 2
+
+
+-----------------------------------------------
+Normal statistic                      :    0.21
+p-value of test                       :    0.42
+
+-----------------------------------------------
+CPU time used                    :  00:00:32.88
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_AppearanceSpacings test:
+-----------------------------------------------
+   N =  1,   Q = 10000000,   K = 1000000000,   r = 0,   s = 3,   L = 15
+
+   Sequences of n = (K + Q)L =  15150000000 bits
+   Q = 10000000 initialization blocks
+   K = 1000000000 blocks for the test
+   the blocks have L = 15 bits
+
+
+
+-----------------------------------------------
+Normal statistic                      :    1.01
+p-value of test                       :    0.16
+
+-----------------------------------------------
+CPU time used                    :  00:02:22.70
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_AppearanceSpacings test:
+-----------------------------------------------
+   N =  1,   Q = 10000000,   K = 1000000000,   r = 27,   s = 3,   L = 15
+
+   Sequences of n = (K + Q)L =  15150000000 bits
+   Q = 10000000 initialization blocks
+   K = 1000000000 blocks for the test
+   the blocks have L = 15 bits
+
+
+
+-----------------------------------------------
+Normal statistic                      :    0.79
+p-value of test                       :    0.22
+
+-----------------------------------------------
+CPU time used                    :  00:02:24.30
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r =  0,  k = 256,  Alpha =      0,  Beta =   0.25
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   67
+Chi-square statistic                  :   55.75
+p-value of test                       :    0.84
+
+-----------------------------------------------
+CPU time used                    :  00:01:14.71
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r = 20,  k = 256,  Alpha =      0,  Beta =   0.25
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   67
+Chi-square statistic                  :   49.35
+p-value of test                       :    0.95
+
+-----------------------------------------------
+CPU time used                    :  00:01:30.89
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r = 28,  k = 256,  Alpha =      0,  Beta =   0.25
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   67
+Chi-square statistic                  :   64.23
+p-value of test                       :    0.57
+
+-----------------------------------------------
+CPU time used                    :  00:01:30.71
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r =  0,  k = 256,  Alpha =      0,  Beta = 0.0625
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   37
+Chi-square statistic                  :   29.70
+p-value of test                       :    0.80
+
+-----------------------------------------------
+CPU time used                    :  00:01:14.61
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r = 10,  k = 256,  Alpha =      0,  Beta = 0.0625
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   37
+Chi-square statistic                  :   40.32
+p-value of test                       :    0.33
+
+-----------------------------------------------
+CPU time used                    :  00:01:30.76
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r = 26,  k = 256,  Alpha =      0,  Beta = 0.0625
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   37
+Chi-square statistic                  :   35.67
+p-value of test                       :    0.53
+
+-----------------------------------------------
+CPU time used                    :  00:01:30.72
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+svaria_SumCollector test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r =  0,   g = 10
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   29
+Chi-square statistic                  :   44.58
+p-value of test                       :    0.03
+
+-----------------------------------------------
+CPU time used                    :  00:02:38.20
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N = 10,  n = 1000000,  r =  0,    s = 5,    L = 30,    k = 30
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.19
+p-value of test                       :    0.43
+
+Kolmogorov-Smirnov- statistic = D-    :    0.28
+p-value of test                       :    0.18
+
+Anderson-Darling statistic = A2       :    0.74
+p-value of test                       :    0.53
+
+Test on the sum of all N observations
+Number of degrees of freedom          :   40
+Chi-square statistic                  :   38.23
+p-value of test                       :    0.55
+
+-----------------------------------------------
+CPU time used                    :  00:01:33.76
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N = 10,  n = 1000000,  r = 25,    s = 5,    L = 30,    k = 30
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.094
+p-value of test                       :    0.79
+
+Kolmogorov-Smirnov- statistic = D-    :    0.22
+p-value of test                       :    0.32
+
+Anderson-Darling statistic = A2       :    0.48
+p-value of test                       :    0.76
+
+Test on the sum of all N observations
+Number of degrees of freedom          :   40
+Chi-square statistic                  :   46.47
+p-value of test                       :    0.22
+
+-----------------------------------------------
+CPU time used                    :  00:01:33.89
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 5000,  r =  0,    s = 4,    L = 1000,    k = 1000
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    3
+Chi-square statistic                  :    4.27
+p-value of test                       :    0.23
+
+-----------------------------------------------
+CPU time used                    :  00:02:52.46
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 5000,  r = 26,    s = 4,    L = 1000,    k = 1000
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    3
+Chi-square statistic                  :    4.30
+p-value of test                       :    0.23
+
+-----------------------------------------------
+CPU time used                    :  00:02:52.54
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 80,  r = 15,    s = 15,    L = 5000,    k = 5000
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    2
+Chi-square statistic                  :  518.64
+p-value of test                       :   eps      *****
+
+-----------------------------------------------
+CPU time used                    :  00:02:22.15
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 80,  r =  0,    s = 30,    L = 5000,    k = 5000
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    2
+Chi-square statistic                  :    1.45
+p-value of test                       :    0.48
+
+-----------------------------------------------
+CPU time used                    :  00:02:06.56
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_Savir2 test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r = 10,    m = 1048576,    t = 30
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.15
+p-value of test                       :    0.60
+
+Kolmogorov-Smirnov- statistic = D-    :    0.12
+p-value of test                       :    0.68
+
+Anderson-Darling statistic = A2       :    0.26
+p-value of test                       :    0.97
+
+Test on the sum of all N observations
+Number of degrees of freedom          :  130
+Chi-square statistic                  :  126.27
+p-value of test                       :    0.58
+
+-----------------------------------------------
+CPU time used                    :  00:00:54.97
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+smarsa_GCD test:
+-----------------------------------------------
+   N = 10,  n = 50000000,  r =  0,   s = 30
+
+
+-----------------------------------------------
+Test results for GCD values:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.48
+p-value of test                       :  6.0e-3
+
+Kolmogorov-Smirnov- statistic = D-    :   0.084
+p-value of test                       :    0.83
+
+Anderson-Darling statistic = A2       :    2.12
+p-value of test                       :    0.08
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 17430
+Chi-square statistic                  :17196.50
+p-value of test                       :    0.89
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:58.71
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r =  0,   s = 5,   L0 =   50,   L1 =   50
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :   36
+ChiSquare statistic                   :   27.83
+p-value of test                       :    0.83
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :   35
+ChiSquare statistic                   :   28.92
+p-value of test                       :    0.76
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :   25
+ChiSquare statistic                   :   26.40
+p-value of test                       :    0.39
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :   24
+ChiSquare statistic                   :   12.40
+p-value of test                       :    0.98
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   17
+ChiSquare statistic                   :   11.85
+p-value of test                       :    0.81
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:08.87
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r = 25,   s = 5,   L0 =   50,   L1 =   50
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :   36
+ChiSquare statistic                   :   24.76
+p-value of test                       :    0.92
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :   35
+ChiSquare statistic                   :   33.00
+p-value of test                       :    0.57
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :   25
+ChiSquare statistic                   :   20.91
+p-value of test                       :    0.70
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :   24
+ChiSquare statistic                   :   15.19
+p-value of test                       :    0.91
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   17
+ChiSquare statistic                   :   11.71
+p-value of test                       :    0.82
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:10.60
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   s = 10,   L0 = 1000,   L1 = 1000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  146
+ChiSquare statistic                   :  108.89
+p-value of test                       :    0.9906
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  146
+ChiSquare statistic                   :  140.47
+p-value of test                       :    0.61
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :  500
+ChiSquare statistic                   :  493.28
+p-value of test                       :    0.58
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  136
+ChiSquare statistic                   :  125.53
+p-value of test                       :    0.73
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   74
+ChiSquare statistic                   :   62.28
+p-value of test                       :    0.83
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:14.87
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r = 20,   s = 10,   L0 = 1000,   L1 = 1000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  146
+ChiSquare statistic                   :  140.65
+p-value of test                       :    0.61
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  146
+ChiSquare statistic                   :  157.01
+p-value of test                       :    0.25
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :  500
+ChiSquare statistic                   :  467.82
+p-value of test                       :    0.85
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  136
+ChiSquare statistic                   :  140.39
+p-value of test                       :    0.38
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   74
+ChiSquare statistic                   :  103.43
+p-value of test                       :    0.01
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:15.54
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 1000000,  r =  0,   s = 15,   L0 = 10000,   L1 = 10000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  384
+ChiSquare statistic                   :  359.98
+p-value of test                       :    0.81
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  384
+ChiSquare statistic                   :  399.41
+p-value of test                       :    0.28
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          : 5000
+ChiSquare statistic                   : 4896.51
+p-value of test                       :    0.85
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  378
+ChiSquare statistic                   :  344.85
+p-value of test                       :    0.89
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :  200
+ChiSquare statistic                   :  214.25
+p-value of test                       :    0.23
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:58.42
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 1000000,  r = 15,   s = 15,   L0 = 10000,   L1 = 10000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  384
+ChiSquare statistic                   :  407.15
+p-value of test                       :    0.20
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  384
+ChiSquare statistic                   :  378.01
+p-value of test                       :    0.58
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          : 5000
+ChiSquare statistic                   : 4769.30
+p-value of test                       :    0.9903
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  378
+ChiSquare statistic                   :  390.51
+p-value of test                       :    0.32
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :  200
+ChiSquare statistic                   :  195.08
+p-value of test                       :    0.58
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:58.88
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+scomp_LinearComp test:
+-----------------------------------------------
+   N =  1,  n = 400020,  r =  0,    s = 1
+
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   12
+Chi2 statistic for size of jumps      :   11.17
+p-value of test                       :    0.51
+
+
+-----------------------------------------------
+Normal statistic for number of jumps  : -418.24
+p-value of test                       : 1 - eps1    *****
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:05.62
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+scomp_LinearComp test:
+-----------------------------------------------
+   N =  1,  n = 400020,  r = 29,    s = 1
+
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   12
+Chi2 statistic for size of jumps      :   10.34
+p-value of test                       :    0.59
+
+
+-----------------------------------------------
+Normal statistic for number of jumps  : -418.43
+p-value of test                       : 1 - eps1    *****
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:05.55
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+scomp_LempelZiv test:
+-----------------------------------------------
+   N = 10,  n = 134217728,  r =  0,   s =   30,   k =   27
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.12
+p-value of test                       :    0.70
+
+Kolmogorov-Smirnov- statistic = D-    :   0.061
+p-value of test                       :    0.89
+
+Anderson-Darling statistic = A2       :    0.15
+p-value of test                       :    0.9989
+
+Tests on the sum of all N observations
+Standardized normal statistic         :   -0.32
+p-value of test                       :    0.62
+
+Sample variance                       :    0.98
+p-value of test                       :    0.45
+
+-----------------------------------------------
+CPU time used                    :  00:01:11.05
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+scomp_LempelZiv test:
+-----------------------------------------------
+   N = 10,  n = 134217728,  r = 15,   s =   15,   k =   27
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.25
+p-value of test                       :    0.25
+
+Kolmogorov-Smirnov- statistic = D-    :   0.100
+p-value of test                       :    0.76
+
+Anderson-Darling statistic = A2       :    0.70
+p-value of test                       :    0.55
+
+Tests on the sum of all N observations
+Standardized normal statistic         :   -0.62
+p-value of test                       :    0.73
+
+Sample variance                       :    0.59
+p-value of test                       :    0.81
+
+-----------------------------------------------
+CPU time used                    :  00:01:11.70
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sspectral_Fourier3 test:
+-----------------------------------------------
+   N = 100000,  n = 16384,  r =  0,   s =    3,   k =   14
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.013
+p-value of test                       :    0.27
+
+Kolmogorov-Smirnov- statistic = D-    : 9.17e-3
+p-value of test                       :    0.50
+
+Anderson-Darling statistic = A2       :    0.91
+p-value of test                       :    0.41
+
+-----------------------------------------------
+CPU time used                    :  00:01:05.14
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sspectral_Fourier3 test:
+-----------------------------------------------
+   N = 100000,  n = 16384,  r = 27,   s =    3,   k =   14
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    : 6.14e-3
+p-value of test                       :    0.73
+
+Kolmogorov-Smirnov- statistic = D-    :   0.013
+p-value of test                       :    0.25
+
+Anderson-Darling statistic = A2       :    0.66
+p-value of test                       :    0.59
+
+-----------------------------------------------
+CPU time used                    :  00:01:03.84
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_LongestHeadRun test:
+-----------------------------------------------
+   N =  1,  n = 1000,  r =  0,   s = 3,   L = 10000020
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    8
+Chi-square statistic                  :    6.88
+p-value of test                       :    0.55
+
+-----------------------------------------------
+Global longest run of 1               :   32.00
+p-value of test                       :    0.50
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:58.52
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_LongestHeadRun test:
+-----------------------------------------------
+   N =  1,  n = 1000,  r = 27,   s = 3,   L = 10000020
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    8
+Chi-square statistic                  :    7.06
+p-value of test                       :    0.53
+
+-----------------------------------------------
+Global longest run of 1               :   32.00
+p-value of test                       :    0.50
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:02:00.04
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_PeriodsInStrings test:
+-----------------------------------------------
+   N = 10,  n = 500000000,  r =  0,   s =   10
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.37
+p-value of test                       :    0.05
+
+Kolmogorov-Smirnov- statistic = D-    :    0.10
+p-value of test                       :    0.76
+
+Anderson-Darling statistic = A2       :    1.90
+p-value of test                       :    0.11
+
+Test on the sum of all N observations
+Number of degrees of freedom          :  200
+Chi-square statistic                  :  174.17
+p-value of test                       :    0.91
+
+-----------------------------------------------
+CPU time used                    :  00:03:59.78
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_PeriodsInStrings test:
+-----------------------------------------------
+   N = 10,  n = 500000000,  r = 20,   s =   10
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.15
+p-value of test                       :    0.59
+
+Kolmogorov-Smirnov- statistic = D-    :    0.23
+p-value of test                       :    0.30
+
+Anderson-Darling statistic = A2       :    0.83
+p-value of test                       :    0.46
+
+Test on the sum of all N observations
+Number of degrees of freedom          :  200
+Chi-square statistic                  :  211.77
+p-value of test                       :    0.27
+
+-----------------------------------------------
+CPU time used                    :  00:04:07.80
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingWeight2 test:
+-----------------------------------------------
+   N = 10,  n = 1000000000,  r =  0,   s = 3,   L = 1000000
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.11
+p-value of test                       :    0.72
+
+Kolmogorov-Smirnov- statistic = D-    :    0.37
+p-value of test                       :    0.05
+
+Anderson-Darling statistic = A2       :    2.41
+p-value of test                       :    0.06
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 10000
+Chi-square statistic                  :10273.13
+p-value of test                       :    0.03
+
+-----------------------------------------------
+CPU time used                    :  00:01:21.50
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingWeight2 test:
+-----------------------------------------------
+   N = 10,  n = 1000000000,  r = 27,   s = 3,   L = 1000000
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.20
+p-value of test                       :    0.40
+
+Kolmogorov-Smirnov- statistic = D-    :    0.11
+p-value of test                       :    0.73
+
+Anderson-Darling statistic = A2       :    0.42
+p-value of test                       :    0.82
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 10000
+Chi-square statistic                  : 9940.64
+p-value of test                       :    0.66
+
+-----------------------------------------------
+CPU time used                    :  00:01:27.25
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingCorr test:
+-----------------------------------------------
+   N =  1,  n = 1000000000,  r = 10,   s = 10,   L = 30
+
+
+
+-----------------------------------------------
+Normal statistic                      :   -0.26
+p-value of test                       :    0.60
+
+-----------------------------------------------
+CPU time used                    :  00:01:44.03
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingCorr test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r = 10,   s = 10,   L = 300
+
+
+
+-----------------------------------------------
+Normal statistic                      :    0.30
+p-value of test                       :    0.38
+
+-----------------------------------------------
+CPU time used                    :  00:01:35.23
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingCorr test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r = 10,   s = 10,   L = 1200
+
+
+
+-----------------------------------------------
+Normal statistic                      :    0.85
+p-value of test                       :    0.20
+
+-----------------------------------------------
+CPU time used                    :  00:06:19.34
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N = 10,  n = 30000000,  r =  0,   s = 3,   L = 30,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.12
+p-value of test                       :    0.70
+
+Kolmogorov-Smirnov- statistic = D-    :    0.24
+p-value of test                       :    0.28
+
+Anderson-Darling statistic = A2       :    0.78
+p-value of test                       :    0.49
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 4890
+Chi-square statistic                  : 4955.44
+p-value of test                       :    0.25
+
+-----------------------------------------------
+CPU time used                    :  00:02:47.93
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N = 10,  n = 30000000,  r = 27,   s = 3,   L = 30,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.36
+p-value of test                       :    0.06
+
+Kolmogorov-Smirnov- statistic = D-    :   0.090
+p-value of test                       :    0.81
+
+Anderson-Darling statistic = A2       :    1.21
+p-value of test                       :    0.26
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 4890
+Chi-square statistic                  : 4810.72
+p-value of test                       :    0.79
+
+-----------------------------------------------
+CPU time used                    :  00:02:41.46
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 30000000,  r =  0,   s = 4,   L = 300,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 4117
+Chi-square statistic                  : 4164.77
+p-value of test                       :    0.30
+
+-----------------------------------------------
+CPU time used                    :  00:02:08.12
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 30000000,  r = 26,   s = 4,   L = 300,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 4117
+Chi-square statistic                  : 4080.32
+p-value of test                       :    0.65
+
+-----------------------------------------------
+CPU time used                    :  00:02:03.86
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   s = 5,   L = 1200,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 11825
+Chi-square statistic                  :11765.94
+p-value of test                       :    0.65
+
+-----------------------------------------------
+CPU time used                    :  00:02:22.32
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r = 25,   s = 5,   L = 1200,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 11825
+Chi-square statistic                  :11725.11
+p-value of test                       :    0.74
+
+-----------------------------------------------
+CPU time used                    :  00:02:15.75
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_Run test:
+-----------------------------------------------
+   N =  1,  n = 2000000000,  r =  0,   s =    3
+
+
+-----------------------------------------------
+Total number of 1 runs:  2000000000
+
+Number of degrees of freedom          :   54
+Chi2 statistic for number of runs     :   50.28
+p-value of test                       :    0.62
+
+
+-----------------------------------------------
+Total number of bits:  8000119941
+
+Normal statistic for number of bits   :    0.95
+p-value of test                       :    0.17
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:35.69
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_Run test:
+-----------------------------------------------
+   N =  1,  n = 2000000000,  r = 27,   s =    3
+
+
+-----------------------------------------------
+Total number of 1 runs:  2000000000
+
+Number of degrees of freedom          :   54
+Chi2 statistic for number of runs     :   48.48
+p-value of test                       :    0.69
+
+
+-----------------------------------------------
+Total number of bits:  7999910781
+
+Normal statistic for number of bits   :   -0.71
+p-value of test                       :    0.76
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:01:40.71
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N = 10,  n = 1000000030,  r =  0,   s = 3,   d = 1
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.31
+p-value of test                       :    0.12
+
+Kolmogorov-Smirnov- statistic = D-    :   0.050
+p-value of test                       :    0.92
+
+Anderson-Darling statistic = A2       :    1.16
+p-value of test                       :    0.28
+
+Tests on the sum of all N observations
+Standardized normal statistic         :   -1.26
+p-value of test                       :    0.90
+
+Sample variance                       :    0.69
+p-value of test                       :    0.72
+
+-----------------------------------------------
+CPU time used                    :  00:03:18.22
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N = 10,  n = 1000000029,  r =  0,   s = 3,   d = 3
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.23
+p-value of test                       :    0.31
+
+Kolmogorov-Smirnov- statistic = D-    :   0.049
+p-value of test                       :    0.93
+
+Anderson-Darling statistic = A2       :    0.77
+p-value of test                       :    0.50
+
+Tests on the sum of all N observations
+Standardized normal statistic         :   -0.99
+p-value of test                       :    0.84
+
+Sample variance                       :    1.36
+p-value of test                       :    0.20
+
+-----------------------------------------------
+CPU time used                    :  00:02:50.56
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N = 10,  n = 1000000030,  r = 27,   s = 3,   d = 1
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.21
+p-value of test                       :    0.35
+
+Kolmogorov-Smirnov- statistic = D-    :    0.24
+p-value of test                       :    0.26
+
+Anderson-Darling statistic = A2       :    0.72
+p-value of test                       :    0.54
+
+Tests on the sum of all N observations
+Standardized normal statistic         :   0.012
+p-value of test                       :    0.50
+
+Sample variance                       :    1.52
+p-value of test                       :    0.13
+
+-----------------------------------------------
+CPU time used                    :  00:03:17.52
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = omoikane01.local.net, Linux
+
+MTGP soukan
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N = 10,  n = 1000000029,  r = 27,   s = 3,   d = 3
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.11
+p-value of test                       :    0.73
+
+Kolmogorov-Smirnov- statistic = D-    :    0.19
+p-value of test                       :    0.43
+
+Anderson-Darling statistic = A2       :    0.32
+p-value of test                       :    0.92
+
+Tests on the sum of all N observations
+Standardized normal statistic         :    0.35
+p-value of test                       :    0.36
+
+Sample variance                       :    0.72
+p-value of test                       :    0.69
+
+-----------------------------------------------
+CPU time used                    :  00:02:49.72
+
+Generator state:
+
+
+
+
+
+========= Summary results of BigCrush =========
+
+ Version:          TestU01 1.2.3
+ Generator:        MTGP soukan
+ Number of statistics:  160
+ Total CPU time:   04:42:11.22
+ The following tests gave p-values outside [0.001, 0.9990]:
+ (eps  means a value < 1.0e-300):
+ (eps1 means a value < 1.0e-15):
+
+       Test                          p-value
+ ----------------------------------------------
+ 70  MatrixRank, L=5000               eps  
+ 80  LinearComp, r = 0              1 - eps1
+ 81  LinearComp, r = 29             1 - eps1
+ ----------------------------------------------
+ All other tests were passed
+
+
+
