@@ -53,6 +53,9 @@ bigcrush-param: bigcrush-param.c
 bigcrush-param-nonlinear: bigcrush-param-nonlinear.c
 	${CC} ${CCFLAGS} -o $@ bigcrush-param-nonlinear.c $(OBJS) -ltestu01
 
+bigcrush-param-nonlinear2: bigcrush-param-nonlinear2.c
+	${CC} ${CCFLAGS} -o $@ bigcrush-param-nonlinear2.c $(OBJS) -ltestu01
+
 .c.o:
 	${CC} ${CCFLAGS} -c $<
 
