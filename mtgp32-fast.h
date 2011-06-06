@@ -20,6 +20,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /**
  * \struct MTGP32_PARAMS_FAST_T
  * MTGP32 parameters.
@@ -340,5 +344,8 @@ inline static float mtgp32_genrand_open_open(mtgp32_fast_t *mtgp32) {
 					& large_mask]);
     return r - 1.0F;
 }
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

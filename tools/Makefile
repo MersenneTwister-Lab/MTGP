@@ -1,15 +1,12 @@
-# @file  Makefile
-# @brief Makefile
+# Makefile
 #
-# @author Mutsuo Saito (Hiroshima University)
-# @author Makoto Matsumoto (Hiroshima University)
+# Mutsuo Saito (Hiroshima University)
 #
-# Copyright (C) 2009 Mutsuo Saito, Makoto Matsumoto and
-# Hiroshima University. All rights reserved.
+# To make bigcrush and bigcrush-param, you need TESTU01
+# http://www.iro.umontreal.ca/~simardr/testu01/tu01.html
 #
-# The new BSD License is applied to this software.
-# see LICENSE.txt
-#
+# To make check-poly, you need NTL
+# http://www.shoup.net/ntl/
 
 #DEBUG = -O0 -g -ggdb
 WARN = -Wmissing-prototypes -Wall #-Winline
@@ -24,8 +21,10 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 STD = -std=c99
 CC = gcc
 CPP = g++
-CPPFLAGS = -Wall -Wextra -O3 -floop-optimize2 -msse3 -I../ $(DEBUG)
-CCFLAGS = -I../ -I/Users/saito/testu01/include -L/Users/saito/testu01/lib $(OPTI) $(WARN) $(STD) $(DEBUG)
+
+CPPFLAGS = -Wall -Wextra -O3 -msse3 -I../ $(DEBUG)
+
+CCFLAGS = -I../ ${TESTU01LIB} $(OPTI) $(WARN) $(STD) $(DEBUG)
 OBJS = ../mtgp32-fast.o ../mtgp64-fast.o ../mtgp32-param-fast.o \
 	../mtgp64-param-fast.o
 
@@ -50,11 +49,11 @@ bigcrush: bigcrush.c
 bigcrush-param: bigcrush-param.c
 	${CC} ${CCFLAGS} -o $@ bigcrush-param.c $(OBJS) -ltestu01
 
-bigcrush-param-nonlinear: bigcrush-param-nonlinear.c
-	${CC} ${CCFLAGS} -o $@ bigcrush-param-nonlinear.c $(OBJS) -ltestu01
-
-bigcrush-param-nonlinear2: bigcrush-param-nonlinear2.c
-	${CC} ${CCFLAGS} -o $@ bigcrush-param-nonlinear2.c $(OBJS) -ltestu01
+#bigcrush-param-nonlinear: bigcrush-param-nonlinear.c
+#	${CC} ${CCFLAGS} -o $@ bigcrush-param-nonlinear.c $(OBJS) -ltestu01
+#
+#bigcrush-param-nonlinear2: bigcrush-param-nonlinear2.c
+#	${CC} ${CCFLAGS} -o $@ bigcrush-param-nonlinear2.c $(OBJS) -ltestu01
 
 .c.o:
 	${CC} ${CCFLAGS} -c $<

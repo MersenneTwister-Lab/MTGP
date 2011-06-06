@@ -20,6 +20,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 /**
  * \struct MTGP64_PARAMS_FAST_T
  * MTGP64 parameters.
@@ -351,5 +354,9 @@ inline static double mtgp64_genrand_open_open(mtgp64_fast_t *mtgp64) {
 					& large_mask]);
     return r - 1.0;
 }
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

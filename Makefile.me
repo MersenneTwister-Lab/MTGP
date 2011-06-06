@@ -20,10 +20,17 @@ FILES = LICENSE.txt \
 	mtgp32-param-ref.c \
 	mtgp32-param-fast.c \
 	Makefile \
-	tools \
-	cuda-sample \
 	html
-VERSION = 1.0.2
+
+CUDA_FILES = mtgp-util.cu mtgp32-cuda.cu mtgp64-cuda.cu \
+	mtgp-util.cuh mtgp32-cuda23209-tex.cu mtgp64-cuda13-tex.cu \
+	mtgp32-cuda-minmem.cu mtgp32dc-param-11213.c mtgp64dc-param-11213.c \
+	mtgp32-cuda-tex.cu mtgp64-cuda-tex.cu Makefile readme.html
+
+TOOL_FILES = Makefile bigcrush-param.c  bigcrush.c check-poly.cpp \
+	check-poly32.sh check-poly64.sh  test32.c test64.c zero-count.c
+
+VERSION = 1.1
 DIR = MTGP-src-${VERSION}
 
 doc:
@@ -34,6 +41,10 @@ doc:
 tar.gz: $(FILES)
 	mkdir ${DIR}
 	cp -r ${FILES} ${DIR}
+	mkdir ${DIR}/cuda-sample
+	(cd cuda-sample; cp ${CUDA_FILES} ../${DIR}/cuda-sample)
+	mkdir ${DIR}/tools
+	(cd tools; cp ${TOOL_FILES} ../${DIR}/tools)
 	tar czvf ${DIR}.tar.gz ${DIR}/*
 	rm -rf ${DIR}
 
@@ -41,6 +52,11 @@ tar.gz: $(FILES)
 zip: $(FILES)
 	mkdir ${DIR}
 	cp -r ${FILES} ${DIR}
+	cp -r ${FILES} ${DIR}
+	mkdir ${DIR}/cuda-sample
+	(cd cuda-sample; cp ${CUDA_FILES} ../${DIR}/cuda-sample)
+	mkdir ${DIR}/tools
+	(cd tools; cp ${TOOL_FILES} ../${DIR}/tools)
 	zip ${DIR}.zip ${DIR}/* ${DIR}/html/* ${DIR}/tools/* \
 		${DIR}/cuda-sample/*
 	rm -rf ${DIR}

@@ -1,10 +1,5 @@
 #include <stdint.h>
 #include "mtgp32-fast.h"
-#define MTGPDC_MEXP 11213
-#define MTGPDC_N 351
-#define MTGPDC_FLOOR_2P 256
-#define MTGPDC_CEIL_2P 512
-#define MTGPDC_PARAM_TABLE mtgp32dc_params_fast_11213
 
 mtgp32_params_fast_t mtgp32dc_params_fast_11213[]
  = {
@@ -11609,4 +11604,5 @@ mtgp32_params_fast_t mtgp32dc_params_fast_11213[]
          0x81,0x1c,0x6d,0xbd,0x0f,0xd4,0x7e,0x57,0x5f,0x75,0x00}
     }
 };
+extern const int mtgpdc_params_11213_num;
 const int mtgpdc_params_11213_num  = 200;

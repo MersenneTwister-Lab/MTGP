@@ -1,15 +1,17 @@
  =================================================================
- MTGP ver. 1.0.2
- 2010.3.26
+ MTGP ver. 1.1
+ 2011.6.6
 
  Mersenne Twister for Graphic Processors(MTGP)
  based on IEEE 754 floating point format.
 
  Mutsuo Saito (Hiroshima University) and
- Makoto Matsumoto (Hiroshima University)
+ Makoto Matsumoto (The University of Tokyo)
 
- Copyright (C) 2009, 2010 Mutsuo Saito, Makoto Matsumoto and
- Hiroshima University. All rights reserved.
+ Copyright (c) 2009, 2010 Mutsuo Saito, Makoto Matsumoto and Hiroshima
+ University.  All rights reserved.
+ Copyright (c) 2011 Mutsuo Saito, Makoto Matsumoto, Hiroshima
+ University and University of Tokyo.  All rights reserved.
 
  The (modified) BSD License is applied to this software, see
  LICENSE.txt

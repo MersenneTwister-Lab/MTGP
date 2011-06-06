@@ -1,4 +1,4 @@
-/**
+/*
  * Sample Program for CUDA 2.3
  * written by M.Saito (saito@math.sci.hiroshima-u.ac.jp)
  *
@@ -11,48 +11,49 @@
  * The period of generated integers is 2<sup>11213</sup>-1.
  * This also generates single precision floating point numbers.
  */
-#define __STDC_FORMAT_MACROS 1
-#define __STDC_CONSTANT_MACROS 1
+
 #include <stdio.h>
 #include <cuda.h>
-#include <cutil.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <errno.h>
 #include <stdlib.h>
-extern "C" {
+
+#include "mtgp-util.cuh"
 #include "mtgp32-fast.h"
-#include "mtgp32dc-param-11213.c"
-}
+
+#define MTGPDC_MEXP 11213
+#define MTGPDC_N 351
+#define MTGPDC_FLOOR_2P 256
+#define MTGPDC_CEIL_2P 512
+#define MTGPDC_PARAM_TABLE mtgp32dc_params_fast_11213
 #define MEXP 11213
-#define N MTGPDC_N
 #define THREAD_NUM MTGPDC_FLOOR_2P
 #define LARGE_SIZE (THREAD_NUM * 3)
-//#define BLOCK_NUM 32
 #define BLOCK_NUM_MAX 200
 #define TBL_SIZE 16
+#define N MTGPDC_N
+
+extern mtgp32_params_fast_t mtgp32dc_params_fast_11213[];
 
 /**
  * kernel I/O
  * This structure must be initialized before first use.
  */
 struct mtgp32_kernel_status_t {
-    uint32_t status[N];
+    uint32_t status[MTGPDC_N];
 };
 
 texture<uint32_t, 1, cudaReadModeElementType> tex_param_ref;
 texture<uint32_t, 1, cudaReadModeElementType> tex_temper_ref;
 texture<uint32_t, 1, cudaReadModeElementType> tex_single_ref;
+
 /*
  * Generator Parameters.
  */
 __constant__ uint32_t pos_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t sh1_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t sh2_tbl[BLOCK_NUM_MAX];
-/* high_mask and low_mask should be set by make_constant(), but
- * did not work.
- */
-//__constant__ uint32_t mask = 0xff800000;
 __constant__ uint32_t mask[1];
 
 /**
@@ -204,41 +205,15 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
 
     // main loop
     for (int i = 0; i < size; i += LARGE_SIZE) {
-
-#if defined(DEBUG) && defined(__DEVICE_EMULATION__)
-	if ((i == 0) && (bid == 0) && (tid <= 1)) {
-	    printf("status[LARGE_SIZE - N + tid]:%08x\n",
-		   status[LARGE_SIZE - N + tid]);
-	    printf("status[LARGE_SIZE - N + tid + 1]:%08x\n",
-		   status[LARGE_SIZE - N + tid + 1]);
-	    printf("status[LARGE_SIZE - N + tid + pos]:%08x\n",
-		   status[LARGE_SIZE - N + tid + pos]);
-	    printf("sh1:%d\n", sh1_tbl[bid]);
-	    printf("sh2:%d\n", sh2_tbl[bid]);
-	    printf("mask:%08x\n", mask[0]);
-	    for (int j = 0; j < 16; j++) {
-		printf("tbl[%d]:%08x\n", j, param_tbl[0][j]);
-	    }
-	}
-#endif
 	r = para_rec(status[LARGE_SIZE - N + tid],
 		 status[LARGE_SIZE - N + tid + 1],
 		 status[LARGE_SIZE - N + tid + pos],
 		 bid);
 	status[tid] = r;
-#if defined(DEBUG) && defined(__DEVICE_EMULATION__)
-	if ((i == 0) && (bid == 0) && (tid <= 1)) {
-	    printf("status[tid]:%08x\n", status[tid]);
-	}
-#endif
 	o = temper(r, status[LARGE_SIZE - N + tid + pos - 1], bid);
-#if defined(DEBUG) && defined(__DEVICE_EMULATION__)
-	if ((i == 0) && (bid == 0) && (tid <= 1)) {
-	    printf("r:%08" PRIx32 "\n", r);
-	}
-#endif
 	d_data[size * bid + i + tid] = o;
 	__syncthreads();
+
 	r = para_rec(status[(4 * THREAD_NUM - N + tid) % LARGE_SIZE],
 		     status[(4 * THREAD_NUM - N + tid + 1) % LARGE_SIZE],
 		     status[(4 * THREAD_NUM - N + tid + pos) % LARGE_SIZE],
@@ -249,6 +224,7 @@ __global__ void mtgp32_uint32_kernel(mtgp32_kernel_status_t* d_status,
 		   bid);
 	d_data[size * bid + THREAD_NUM + i + tid] = o;
 	__syncthreads();
+
 	r = para_rec(status[2 * THREAD_NUM - N + tid],
 		     status[2 * THREAD_NUM - N + tid + 1],
 		     status[2 * THREAD_NUM - N + tid + pos],
@@ -376,8 +352,38 @@ __global__ void mtgp32_single01_kernel(mtgp32_kernel_status_t* d_status,
     status_write(d_status, status, bid, tid);
 }
 
-#include "mtgp-cuda-common.c"
-#include "mtgp32-cuda-common.c"
+/**
+ * This function initializes kernel I/O data.
+ * @param d_status output kernel I/O data.
+ * @param params MTGP32 parameters. needed for the initialization.
+ */
+void make_kernel_data32(mtgp32_kernel_status_t * d_status,
+			mtgp32_params_fast_t params[],
+			int block_num)
+{
+    int i;
+    mtgp32_kernel_status_t* h_status
+	= (mtgp32_kernel_status_t *) malloc(
+	    sizeof(mtgp32_kernel_status_t) * block_num);
+
+    if (h_status == NULL) {
+	printf("failure in allocating host memory for kernel I/O data.\n");
+	exit(8);
+    }
+    for (i = 0; i < block_num; i++) {
+	mtgp32_init_state(&(h_status[i].status[0]), &params[i], i + 1);
+    }
+#if defined(DEBUG)
+    printf("h_status[0].status[0]:%08"PRIx32"\n", h_status[0].status[0]);
+    printf("h_status[0].status[1]:%08"PRIx32"\n", h_status[0].status[1]);
+    printf("h_status[0].status[2]:%08"PRIx32"\n", h_status[0].status[2]);
+    printf("h_status[0].status[3]:%08"PRIx32"\n", h_status[0].status[3]);
+#endif
+    ccudaMemcpy(d_status, h_status,
+		sizeof(mtgp32_kernel_status_t) * block_num,
+		cudaMemcpyHostToDevice);
+    free(h_status);
+}
 
 /**
  * This function sets constants in device memory.
@@ -409,10 +415,10 @@ void make_constant_param(const mtgp32_params_fast_t params[],
 	h_sh2_tbl[i] = params[i].sh2;
     }
     // copy from malloc area only
-    CUDA_SAFE_CALL(cudaMemcpyToSymbol(pos_tbl, h_pos_tbl, size1));
-    CUDA_SAFE_CALL(cudaMemcpyToSymbol(sh1_tbl, h_sh1_tbl, size1));
-    CUDA_SAFE_CALL(cudaMemcpyToSymbol(sh2_tbl, h_sh2_tbl, size1));
-    CUDA_SAFE_CALL(cudaMemcpyToSymbol(mask, h_mask, sizeof(uint32_t)));
+    ccudaMemcpyToSymbol(pos_tbl, h_pos_tbl, size1);
+    ccudaMemcpyToSymbol(sh1_tbl, h_sh1_tbl, size1);
+    ccudaMemcpyToSymbol(sh2_tbl, h_sh2_tbl, size1);
+    ccudaMemcpyToSymbol(mask, h_mask, sizeof(uint32_t));
     free(h_pos_tbl);
     free(h_sh1_tbl);
     free(h_sh2_tbl);
@@ -449,18 +455,18 @@ void make_texture(const mtgp32_params_fast_t params[],
 	    h_texture_tbl[2][i * TBL_SIZE + j] = params[i].flt_tmp_tbl[j];
 	}
     }
-    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[0], h_texture_tbl[0], size,
-			      cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[1], h_texture_tbl[1], size,
-			      cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_texture_tbl[2], h_texture_tbl[2], size,
-			      cudaMemcpyHostToDevice));
+    ccudaMemcpy(d_texture_tbl[0], h_texture_tbl[0], size,
+	       cudaMemcpyHostToDevice);
+    ccudaMemcpy(d_texture_tbl[1], h_texture_tbl[1], size,
+	       cudaMemcpyHostToDevice);
+    ccudaMemcpy(d_texture_tbl[2], h_texture_tbl[2], size,
+	       cudaMemcpyHostToDevice);
     tex_param_ref.filterMode = cudaFilterModePoint;
     tex_temper_ref.filterMode = cudaFilterModePoint;
     tex_single_ref.filterMode = cudaFilterModePoint;
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_param_ref, d_texture_tbl[0], size));
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_temper_ref, d_texture_tbl[1], size));
-    CUDA_SAFE_CALL(cudaBindTexture(0, tex_single_ref, d_texture_tbl[2], size));
+    ccudaBindTexture(0, tex_param_ref, d_texture_tbl[0], size);
+    ccudaBindTexture(0, tex_temper_ref, d_texture_tbl[1], size);
+    ccudaBindTexture(0, tex_single_ref, d_texture_tbl[2], size);
     free(h_texture_tbl[0]);
     free(h_texture_tbl[1]);
     free(h_texture_tbl[2]);
@@ -477,20 +483,22 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status,
 			int num_data,
 			int block_num) {
     uint32_t* d_data;
-    unsigned int timer = 0;
     uint32_t* h_data;
     cudaError_t e;
     float gputime;
+    cudaEvent_t start;
+    cudaEvent_t end;
 
     printf("generating 32-bit unsigned random numbers.\n");
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_data, sizeof(uint32_t) * num_data));
-    CUT_SAFE_CALL(cutCreateTimer(&timer));
+    ccudaMalloc((void**)&d_data, sizeof(uint32_t) * num_data);
+    ccudaEventCreate(&start);
+    ccudaEventCreate(&end);
     h_data = (uint32_t *) malloc(sizeof(uint32_t) * num_data);
     if (h_data == NULL) {
 	printf("failure in allocating host memory for output data.\n");
 	exit(1);
     }
-    CUT_SAFE_CALL(cutStartTimer(timer));
+    ccudaEventRecord(start, 0);
     if (cudaGetLastError() != cudaSuccess) {
 	printf("error has been occured before kernel call.\n");
 	exit(1);
@@ -506,21 +514,23 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status,
 	printf("failure in kernel call.\n%s\n", cudaGetErrorString(e));
 	exit(1);
     }
-    CUT_SAFE_CALL(cutStopTimer(timer));
-    CUDA_SAFE_CALL(
-	cudaMemcpy(h_data,
-		   d_data,
-		   sizeof(uint32_t) * num_data,
-		   cudaMemcpyDeviceToHost));
-    gputime = cutGetTimerValue(timer);
+    ccudaEventRecord(end, 0);
+    ccudaEventSynchronize(end);
+
+    ccudaMemcpy(h_data,
+		d_data,
+		sizeof(uint32_t) * num_data,
+		cudaMemcpyDeviceToHost);
+    ccudaEventElapsedTime(&gputime, start, end);
     print_uint32_array(h_data, num_data, block_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
-    CUT_SAFE_CALL(cutDeleteTimer(timer));
+    ccudaEventDestroy(start);
+    ccudaEventDestroy(end);
     //free memories
     free(h_data);
-    CUDA_SAFE_CALL(cudaFree(d_data));
+    ccudaFree(d_data);
 }
 
 /**
@@ -534,20 +544,22 @@ void make_single_random(mtgp32_kernel_status_t* d_status,
 			int num_data,
 			int block_num) {
     float* d_data;
-    unsigned int timer = 0;
     float* h_data;
     cudaError_t e;
     float gputime;
+    cudaEvent_t start;
+    cudaEvent_t end;
 
     printf("generating single precision floating point random numbers.\n");
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_data, sizeof(float) * num_data));
-    CUT_SAFE_CALL(cutCreateTimer(&timer));
+    ccudaMalloc((void**)&d_data, sizeof(float) * num_data);
+    ccudaEventCreate(&start);
+    ccudaEventCreate(&end);
     h_data = (float *) malloc(sizeof(float) * num_data);
     if (h_data == NULL) {
 	printf("failure in allocating host memory for output data.\n");
 	exit(1);
     }
-    CUT_SAFE_CALL(cutStartTimer(timer));
+    ccudaEventRecord(start, 0);
     if (cudaGetLastError() != cudaSuccess) {
 	printf("error has been occured before kernel call.\n");
 	exit(1);
@@ -563,21 +575,22 @@ void make_single_random(mtgp32_kernel_status_t* d_status,
 	printf("failure in kernel call.\n%s\n", cudaGetErrorString(e));
 	exit(1);
     }
-    CUT_SAFE_CALL(cutStopTimer(timer));
-    CUDA_SAFE_CALL(
-	cudaMemcpy(h_data,
-		   d_data,
-		   sizeof(uint32_t) * num_data,
-		   cudaMemcpyDeviceToHost));
-    gputime = cutGetTimerValue(timer);
+    ccudaEventRecord(end, 0);
+    ccudaEventSynchronize(end);
+    ccudaMemcpy(h_data,
+		d_data,
+		sizeof(uint32_t) * num_data,
+		cudaMemcpyDeviceToHost);
+    ccudaEventElapsedTime(&gputime, start, end);
     print_float_array(h_data, num_data, block_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
-    CUT_SAFE_CALL(cutDeleteTimer(timer));
+    ccudaEventDestroy(start);
+    ccudaEventDestroy(end);
     //free memories
     free(h_data);
-    CUDA_SAFE_CALL(cudaFree(d_data));
+    ccudaFree(d_data);
 }
 
 /**
@@ -591,20 +604,22 @@ void make_single01_random(mtgp32_kernel_status_t* d_status,
 			  int num_data,
 			  int block_num) {
     float* d_data;
-    unsigned int timer = 0;
     float* h_data;
     cudaError_t e;
     float gputime;
+    cudaEvent_t start;
+    cudaEvent_t end;
 
     printf("generating single precision floating point random numbers.\n");
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_data, sizeof(float) * num_data));
-    CUT_SAFE_CALL(cutCreateTimer(&timer));
+    ccudaMalloc((void**)&d_data, sizeof(float) * num_data);
+    ccudaEventCreate(&start);
+    ccudaEventCreate(&end);
     h_data = (float *) malloc(sizeof(float) * num_data);
     if (h_data == NULL) {
 	printf("failure in allocating host memory for output data.\n");
 	exit(1);
     }
-    CUT_SAFE_CALL(cutStartTimer(timer));
+    ccudaEventRecord(start, 0);
     if (cudaGetLastError() != cudaSuccess) {
 	printf("error has been occured before kernel call.\n");
 	exit(1);
@@ -620,21 +635,22 @@ void make_single01_random(mtgp32_kernel_status_t* d_status,
 	printf("failure in kernel call.\n%s\n", cudaGetErrorString(e));
 	exit(1);
     }
-    CUT_SAFE_CALL(cutStopTimer(timer));
-    CUDA_SAFE_CALL(
-	cudaMemcpy(h_data,
-		   d_data,
-		   sizeof(uint32_t) * num_data,
-		   cudaMemcpyDeviceToHost));
-    gputime = cutGetTimerValue(timer);
+    ccudaEventRecord(end, 0);
+    ccudaEventSynchronize(end);
+    ccudaMemcpy(h_data,
+		d_data,
+		sizeof(uint32_t) * num_data,
+		cudaMemcpyDeviceToHost);
+    ccudaEventElapsedTime(&gputime, start, end);
     print_float_array(h_data, num_data, block_num);
     printf("generated numbers: %d\n", num_data);
     printf("Processing time: %f (ms)\n", gputime);
     printf("Samples per second: %E \n", num_data / (gputime * 0.001));
-    CUT_SAFE_CALL(cutDeleteTimer(timer));
+    ccudaEventDestroy(start);
+    ccudaEventDestroy(end);
     //free memories
     free(h_data);
-    CUDA_SAFE_CALL(cudaFree(d_data));
+    ccudaFree(d_data);
 }
 
 int main(int argc, char *argv[])
@@ -646,6 +662,10 @@ int main(int argc, char *argv[])
     int r;
     mtgp32_kernel_status_t *d_status;
     uint32_t *d_texture[3];
+    int device = 0;
+    int mb, mp;
+
+    ccudaSetDevice(device);
 
     if (argc >= 2) {
 	errno = 0;
@@ -668,9 +688,11 @@ int main(int argc, char *argv[])
 	argc -= 2;
 	argv += 2;
     } else {
-	CUT_DEVICE_INIT(argc, argv);
 	printf("%s number_of_block number_of_output\n", argv[0]);
-	block_num = get_suitable_block_num(sizeof(uint32_t),
+	block_num = get_suitable_block_num(device,
+					   &mb,
+					   &mp,
+					   sizeof(uint32_t),
 					   THREAD_NUM,
 					   LARGE_SIZE);
 	if (block_num <= 0) {
@@ -678,37 +700,34 @@ int main(int argc, char *argv[])
 	    return 1;
 	}
 	printf("the suitable number of blocks for device 0 "
-	       "will be multiple of %d\n", block_num);
+	       "will be multiple of %d, or multiple of %d\n", block_num,
+	       (mb - 1) * mp);
 	return 1;
     }
-    CUT_DEVICE_INIT(argc, argv);
 
     num_unit = LARGE_SIZE * block_num;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_status,
-			      sizeof(mtgp32_kernel_status_t) * block_num));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[0],
-			      sizeof(uint32_t) * block_num * TBL_SIZE));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[1],
-			      sizeof(uint32_t) * block_num * TBL_SIZE));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_texture[2],
-			      sizeof(uint32_t) * block_num * TBL_SIZE));
+    ccudaMalloc((void**)&d_status,
+		sizeof(mtgp32_kernel_status_t) * block_num);
+    ccudaMalloc((void**)&d_texture[0],
+		sizeof(uint32_t) * block_num * TBL_SIZE);
+    ccudaMalloc((void**)&d_texture[1],
+		sizeof(uint32_t) * block_num * TBL_SIZE);
+    ccudaMalloc((void**)&d_texture[2],
+		sizeof(uint32_t) * block_num * TBL_SIZE);
     r = num_data % num_unit;
     if (r != 0) {
 	num_data = num_data + num_unit - r;
     }
     make_constant_param(MTGPDC_PARAM_TABLE, block_num);
     make_texture(MTGPDC_PARAM_TABLE, d_texture, block_num);
-    make_kernel_data(d_status, MTGPDC_PARAM_TABLE, block_num);
+    make_kernel_data32(d_status, MTGPDC_PARAM_TABLE, block_num);
     make_uint32_random(d_status, num_data, block_num);
     make_single_random(d_status, num_data, block_num);
     make_single01_random(d_status, num_data, block_num);
 
     //finalize
-    CUDA_SAFE_CALL(cudaFree(d_status));
-    CUDA_SAFE_CALL(cudaFree(d_texture[0]));
-    CUDA_SAFE_CALL(cudaFree(d_texture[1]));
-    CUDA_SAFE_CALL(cudaFree(d_texture[2]));
-#ifdef NEED_PROMPT
-    CUT_EXIT(argc, argv);
-#endif
+    ccudaFree(d_status);
+    ccudaFree(d_texture[0]);
+    ccudaFree(d_texture[1]);
+    ccudaFree(d_texture[2]);
 }

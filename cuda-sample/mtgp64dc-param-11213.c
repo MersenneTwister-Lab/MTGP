@@ -11609,4 +11609,5 @@ mtgp64_params_fast_t mtgp64dc_params_fast_11213[]
          0x7e,0x18,0xa5,0x8a,0x0e,0xdd,0x66,0x21,0x8e,0xe8,0x00}
     }
 };
+extern const int mtgpdc_params_11213_num;
 const int mtgpdc_params_11213_num  = 200;
