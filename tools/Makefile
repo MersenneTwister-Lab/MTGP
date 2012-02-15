@@ -22,7 +22,8 @@ STD = -std=c99
 CC = gcc
 CPP = g++
 
-CPPFLAGS = -Wall -Wextra -O3 -msse3 -I../ $(DEBUG)
+CPPFLAGS = -Wall -Wextra -O3 -D__STDC_FORMAT_MACROS=1 \
+	-D__STDC_CONSTANT_MACROS=1 -msse3 -I../ $(DEBUG)
 
 CCFLAGS = -I../ ${TESTU01LIB} $(OPTI) $(WARN) $(STD) $(DEBUG)
 OBJS = ../mtgp32-fast.o ../mtgp64-fast.o ../mtgp32-param-fast.o \
@@ -38,7 +39,10 @@ cmp32-cuda2: test32-2.c
 	${CC} ${CCFLAGS} -o $@ test32-2.c ${OBJS}
 
 check-poly: check-poly.cpp
-	${CPP} ${CPPFLAGS} -o $@ check-poly.cpp ${OBJS} -lntl -lgmp -lcrypto
+	${CPP} ${CPPFLAGS} -o $@ check-poly.cpp ${OBJS} -lntl -lgf2x -lcrypto
+
+print-poly: print-poly.cpp
+	${CPP} ${CPPFLAGS} -o $@ print-poly.cpp ${OBJS} -lntl -lgf2x
 
 zero-count: zero-count.c
 	${CC} ${CCFLAGS} -o $@ zero-count.c $(OBJS)
@@ -48,6 +52,9 @@ bigcrush: bigcrush.c
 
 bigcrush-param: bigcrush-param.c
 	${CC} ${CCFLAGS} -o $@ bigcrush-param.c $(OBJS) -ltestu01
+
+print-characteristic: print-characteristic.cpp
+	${CPP} ${CPPFLAGS} -o $@ print-characteristic.cpp ${OBJS} -lntl -lgmp
 
 #bigcrush-param-nonlinear: bigcrush-param-nonlinear.c
 #	${CC} ${CCFLAGS} -o $@ bigcrush-param-nonlinear.c $(OBJS) -ltestu01
