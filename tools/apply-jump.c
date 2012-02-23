@@ -1,16 +1,7 @@
 /**
- * This program uses NTL:
- * http://shoup.net/ntl/
  */
 #include <stdint.h>
 #include <inttypes.h>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <NTL/GF2X.h>
-#include <NTL/vec_GF2.h>
-#include <NTL/GF2XFactoring.h>
 #include <errno.h>
 #include <time.h>
 extern "C" {
@@ -26,11 +17,10 @@ int mexp;
 int no;
 uint64_t jump_step;
 
-static void u32_print_poly(int mexp, int no, int seed);
-static void u64_print_poly(int mexp, int no, int seed);
-static void calc_minpoly(vec_GF2& vec, GF2X& poly);
-static void print_jump_poly(GF2X& poly, uint64_t step);
-static void print_poly(GF2X& poly);
+§ﬁ§¿≈”√Ê
+static void u32_apply_jump(int mexp, int no, int seed);
+static void u64_apply_jump(int mexp, int no, int seed);
+static void read_poly(uint64_t *array, FILE *fp);
 
 int main(int argc, char *argv[]) {
     uint32_t seed = 1;

@@ -8,7 +8,7 @@
 # To make check-poly, you need NTL
 # http://www.shoup.net/ntl/
 
-#DEBUG = -O0 -g -ggdb
+DEBUG = -O0 -g -ggdb
 WARN = -Wmissing-prototypes -Wall #-Winline
 #WARN = -Wmissing-prototypes -Wall -W
 OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
