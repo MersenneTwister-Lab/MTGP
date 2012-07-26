@@ -11,6 +11,12 @@
 # see LICENSE.txt
 #
 
+# uncomment next line if you installed NTL with gf2x
+LIBGF2X = -lgf2x
+# uncomment next line if you installed NTL with gmp
+#LIBGMP = -lgmp
+LINKOPT = -lntl $(LIBGF2X) $(LIBGMP)
+
 WARN = -Wmissing-prototypes -Wall #-Winline
 #WARN = -Wmissing-prototypes -Wall -W
 OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
@@ -71,6 +77,16 @@ test32-ref: mtgp32-ref.h mtgp32-ref.c mtgp32-param-ref.o
 
 test32-fast: mtgp32-fast.h mtgp32-fast.c mtgp32-param-fast.o
 	${CC} ${CCFLAGS} -DMAIN=1 -o $@ mtgp32-fast.c mtgp32-param-fast.o
+
+calc-poly32: calc-poly32.cpp mtgp32-fast.h mtgp32-fast.o mtgp32-param-fast.o
+	${CPP} ${CPPFLAGS} -DMAIN=1 -o $@ calc-poly32.cpp mtgp32-fast.o \
+	mtgp32-param-fast.o ${LINKOPT}
+
+test-jump32: test-jump32.cpp calc-poly32.cpp mtgp-calc-jump.hpp \
+	mtgp32-fast.h mtgp32-fast.o mtgp32-fast-jump.o mtgp32-param-fast.o
+	${CPP} ${CPPFLAGS}  -o $@ test-jump32.cpp \
+	calc-poly32.cpp mtgp32-fast.o mtgp32-fast-jump.o \
+	mtgp32-param-fast.o ${LINKOPT}
 
 .c.o:
 	${CC} ${CCFLAGS} -c $<
