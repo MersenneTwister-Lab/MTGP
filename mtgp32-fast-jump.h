@@ -23,6 +23,19 @@
 extern "C" {
 #endif
     void mtgp32_fast_jump(mtgp32_fast_t * mtgp32, const char * jump_string);
+
+    inline static void copy(mtgp32_fast_t * dest, mtgp32_fast_t * src)
+    {
+	dest->params = src->params;
+	dest->status->idx = src->status->idx;
+	dest->status->size = src->status->size;
+	dest->status->large_size = src->status->large_size;
+	dest->status->large_mask = src->status->large_mask;
+	for (int i = 0; i < dest->status->large_size; i++) {
+	    dest->status->array[i] = src->status->array[i] ;
+	}
+    }
+
 #if defined(__cplusplus)
 }
 #endif /* C++ */

@@ -24,6 +24,7 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
     inline static void add(mtgp32_fast_t *dest, mtgp32_fast_t *src) {
 	int dp = dest->status->idx;
 	int sp = src->status->idx;
@@ -49,7 +50,11 @@ extern "C" {
     void mtgp32_fast_jump(mtgp32_fast_t * mtgp32, const char * jump_string) {
 	mtgp32_fast_t work;
 	int bits;
-	memset(&work, 0, sizeof(mtgp32_fast_t));
+	mtgp32_params_fast_t params = mtgp32->params;
+	mtgp32_init(&work, &params, 0);
+	memset(&work.status->array[0], 0,
+	       sizeof(uint32_t) * work.status->large_size);
+	work.status->idx = work.status->large_size - 1;
 
 	for (int i = 0; jump_string[i] != '\0'; i++) {
 	    bits = jump_string[i];
@@ -69,7 +74,7 @@ extern "C" {
 		bits = bits >> 1;
 	    }
 	}
-	*mtgp32 = work;
+	copy(mtgp32, &work);
     }
 
 #if defined(__cplusplus)

@@ -11,6 +11,7 @@
 # see LICENSE.txt
 #
 
+#DEBUG = -DDEBUG -ggdb -O0
 # uncomment next line if you installed NTL with gf2x
 LIBGF2X = -lgf2x
 # uncomment next line if you installed NTL with gmp
@@ -29,7 +30,7 @@ OPTI = -O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 STD = -std=c99
 CC = gcc
 CPP = g++
-CPPFLAGS = -Wall -Wextra -O3 -msse3
+CPPFLAGS = -Wall -Wextra -O3 -msse3 $(DEBUG)
 CCFLAGS = $(OPTI) $(WARN) $(STD) $(DEBUG)
 # ==========================================================
 # comment out or EDIT following lines to get max performance
@@ -87,6 +88,17 @@ test-jump32: test-jump32.cpp calc-poly32.cpp mtgp-calc-jump.hpp \
 	${CPP} ${CPPFLAGS}  -o $@ test-jump32.cpp \
 	calc-poly32.cpp mtgp32-fast.o mtgp32-fast-jump.o \
 	mtgp32-param-fast.o ${LINKOPT}
+
+mtgp64-calc-poly: mtgp64-calc-poly.cpp mtgp64-fast.h mtgp64-fast.o \
+	mtgp64-param-fast.o
+	${CPP} ${CPPFLAGS} -DMAIN=1 -o $@ mtgp64-calc-poly.cpp mtgp64-fast.o \
+	mtgp64-param-fast.o ${LINKOPT}
+
+test-jump64: test-jump64.cpp mtgp64-calc-poly.cpp mtgp-calc-jump.hpp \
+	mtgp64-fast.h mtgp64-fast.o mtgp64-fast-jump.o mtgp64-param-fast.o
+	${CPP} ${CPPFLAGS}  -o $@ test-jump64.cpp \
+	mtgp64-calc-poly.cpp mtgp64-fast.o mtgp64-fast-jump.o \
+	mtgp64-param-fast.o ${LINKOPT}
 
 .c.o:
 	${CC} ${CCFLAGS} -c $<

@@ -1,5 +1,5 @@
 /**
- * @file test-jump32.cpp
+ * @file test-jump64.cpp
  *
  * @brief test jump function.
  *
@@ -22,9 +22,9 @@
 #include <stdint.h>
 #include <time.h>
 #include <errno.h>
-#include "mtgp32-calc-poly.hpp"
+#include "mtgp64-calc-poly.hpp"
 #include "mtgp-calc-jump.hpp"
-#include "mtgp32-fast-jump.h"
+#include "mtgp64-fast-jump.h"
 #include <NTL/GF2X.h>
 #include <NTL/vec_GF2.h>
 #include <NTL/ZZ.h>
@@ -32,12 +32,11 @@
 using namespace NTL;
 using namespace std;
 
-static void test(mtgp32_fast_t * mtgp, GF2X& poly);
-static int check(mtgp32_fast_t *a, mtgp32_fast_t *b);
-static void print_state(mtgp32_fast_t * a, mtgp32_fast_t * b);
-static void copy(mtgp32_fast_t * dest, mtgp32_fast_t * src);
-static void print_sequence(mtgp32_fast_t * a, mtgp32_fast_t * b);
-static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic);
+static void test(mtgp64_fast_t * mtgp, GF2X& poly);
+static int check(mtgp64_fast_t *a, mtgp64_fast_t *b);
+static void print_state(mtgp64_fast_t * a, mtgp64_fast_t * b);
+static void print_sequence(mtgp64_fast_t * a, mtgp64_fast_t * b);
+static void speed(mtgp64_fast_t * mtgp, GF2X& characteristic);
 
 int main(int argc, char * argv[]) {
     if (argc <= 3) {
@@ -46,8 +45,8 @@ int main(int argc, char * argv[]) {
     }
     errno = 0;
     GF2X characteristic;
-    mtgp32_params_fast_t *params;
-    mtgp32_fast_t mtgp;
+    mtgp64_params_fast_t *params;
+    mtgp64_fast_t mtgp;
     uint32_t seed = 0;
     //    int rc;
     int mexp = strtol(argv[2], NULL, 10);
@@ -57,33 +56,33 @@ int main(int argc, char * argv[]) {
 	return 1;
     }
     switch (mexp) {
-    case 11213:
-        params = mtgp32_params_fast_11213;
-        break;
     case 23209:
-        params = mtgp32_params_fast_23209;
+        params = mtgp64_params_fast_23209;
         break;
     case 44497:
-        params = mtgp32_params_fast_44497;
+        params = mtgp64_params_fast_44497;
+        break;
+    case 110503:
+        params = mtgp64_params_fast_110503;
         break;
     default:
         printf("%s: mexp no.\n", argv[0]);
-        printf("mexp shuould be 11213, 23209 or 44497\n");
+        printf("mexp shuould be 23209, 44497 or 110503\n");
         return 2;
     }
     params += no;
-    mtgp32_init(&mtgp, params, seed);
-    calc_characteristic(characteristic, &mtgp);
+    mtgp64_init(&mtgp, params, seed);
+    mtgp64_calc_characteristic(characteristic, &mtgp);
     if (argv[1][1] == 's') {
 	speed(&mtgp, characteristic);
     } else {
 	test(&mtgp, characteristic);
     }
-    mtgp32_free(&mtgp);
+    mtgp64_free(&mtgp);
     return 0;
 }
 
-static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic)
+static void speed(mtgp64_fast_t * mtgp, GF2X& characteristic)
 {
     long step = 10000;
     int exp = 4;
@@ -114,7 +113,7 @@ static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic)
 	start = clock();
 
 	for (int j = 0; j < 10; j++) {
-	    mtgp32_fast_jump(mtgp, jump_string.c_str());
+	    mtgp64_fast_jump(mtgp, jump_string.c_str());
 	}
 	elapsed2 = clock() - start;
 	elapsed2 = elapsed2 * 1000 / 10 / CLOCKS_PER_SEC;
@@ -135,12 +134,12 @@ static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic)
     }
 }
 
-static int check(mtgp32_fast_t *a, mtgp32_fast_t *b)
+static int check(mtgp64_fast_t *a, mtgp64_fast_t *b)
 {
     int check = 0;
     for (int i = 0; i < 100; i++) {
-	uint32_t x = mtgp32_genrand_uint32(a);
-	uint32_t y = mtgp32_genrand_uint32(b);
+	uint64_t x = mtgp64_genrand_uint64(a);
+	uint64_t y = mtgp64_genrand_uint64(b);
 	if (x != y) {
 	    print_state(a, b);
 	    print_sequence(a, b);
@@ -156,38 +155,38 @@ static int check(mtgp32_fast_t *a, mtgp32_fast_t *b)
     return check;
 }
 
-static void print_state(mtgp32_fast_t *a, mtgp32_fast_t * b)
+static void print_state(mtgp64_fast_t *a, mtgp64_fast_t * b)
 {
   int large_size = a->status->large_size;
   cout << "idx = " << dec << a->status->idx
        << "   " << dec << b->status->idx
        << endl;
     for (int i = 0; (i < 10) && (i < large_size); i++) {
-      cout << setfill('0') << setw(8) << hex
+      cout << setfill('0') << setw(16) << hex
 	   << a->status->array[(i + a->status->idx) % large_size];
       cout << " ";
-      cout << setfill('0') << setw(8) << hex
+      cout << setfill('0') << setw(16) << hex
 	   << b->status->array[(i + b->status->idx) % large_size];
       cout << endl;
     }
 }
 
-static void print_sequence(mtgp32_fast_t *a, mtgp32_fast_t * b)
+static void print_sequence(mtgp64_fast_t *a, mtgp64_fast_t * b)
 {
     for (int i = 0; i < 25; i++) {
-	uint32_t c, d;
-	c = mtgp32_genrand_uint32(a);
-	d = mtgp32_genrand_uint32(b);
-	cout << setfill('0') << setw(8) << hex << c;
-	cout << " " << setfill('0') << setw(8) << hex << d;
+	uint64_t c, d;
+	c = mtgp64_genrand_uint64(a);
+	d = mtgp64_genrand_uint64(b);
+	cout << setfill('0') << setw(16) << hex << c;
+	cout << " " << setfill('0') << setw(16) << hex << d;
 	cout << endl;
     }
 }
 
-static void test(mtgp32_fast_t * mtgp, GF2X& characteristic)
+static void test(mtgp64_fast_t * mtgp, GF2X& characteristic)
 {
-    mtgp32_fast_t new_mtgp_z;
-    mtgp32_fast_t * new_mtgp = &new_mtgp_z;
+    mtgp64_fast_t new_mtgp_z;
+    mtgp64_fast_t * new_mtgp = &new_mtgp_z;
 //    uint32_t seed[] = {1, 998102, 1234, 0, 5};
 //    uint32_t seed[20] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     long steps[] = {1, 2, mtgp->status->size + 1,
@@ -199,11 +198,11 @@ static void test(mtgp32_fast_t * mtgp, GF2X& characteristic)
     int steps_size = sizeof(steps) / sizeof(long);
     ZZ test_count;
     string jump_string;
-    mtgp32_params_fast_t params = mtgp->params;
-    mtgp32_init(new_mtgp, &params, 0);
-    mtgp32_genrand_uint32(mtgp);
-    mtgp32_genrand_uint32(mtgp);
-    mtgp32_genrand_uint32(mtgp);
+    mtgp64_params_fast_t params = mtgp->params;
+    mtgp64_init(new_mtgp, &params, 0);
+    mtgp64_genrand_uint64(mtgp);
+    mtgp64_genrand_uint64(mtgp);
+    mtgp64_genrand_uint64(mtgp);
     /* plus jump */
     for (int index = 0; index < steps_size; index++) {
 //	mtgp_init_gen_rand(mtgp, seed[index]);
@@ -211,9 +210,9 @@ static void test(mtgp32_fast_t * mtgp, GF2X& characteristic)
 	cout << "mexp " << dec << mtgp->params.mexp << " jump "
 	     << test_count << " steps" << endl;
 //	*new_mtgp = *mtgp;
-	copy(new_mtgp, mtgp);
+	mtgp64_copy(new_mtgp, mtgp);
 	for (long i = 0; i < steps[index]; i++) {
-	    mtgp32_genrand_uint32(mtgp);
+	    mtgp64_genrand_uint64(mtgp);
 	}
 	calc_jump(jump_string, test_count, characteristic);
 #if defined(DEBUG)
@@ -221,7 +220,7 @@ static void test(mtgp32_fast_t * mtgp, GF2X& characteristic)
 	cout << "before jump:" << endl;
 	print_state(new_mtgp, mtgp);
 #endif
-	mtgp32_fast_jump(new_mtgp, jump_string.c_str());
+	mtgp64_fast_jump(new_mtgp, jump_string.c_str());
 #if defined(DEBUG)
 	cout << "after jump:" << endl;
 	print_state(new_mtgp, mtgp);

@@ -24,19 +24,21 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
     inline static void add(mtgp64_fast_t *dest, mtgp64_fast_t *src) {
-	int dp = dest->idx;
-	int sp = src->idx;
-	int diff = (sp - dp + src->large_size) % large_size;
+	int dp = dest->status->idx;
+	int sp = src->status->idx;
+	int large_size = src->status->large_size;
+	int diff = (sp - dp + large_size) % large_size;
 	int p;
 	int i;
 	for (i = 0; i < large_size - diff; i++) {
 	    p = i + diff;
-	    dest->array[i] ^= src->array[p];
+	    dest->status->array[i] ^= src->status->array[p];
 	}
 	for (; i < large_size; i++) {
 	    p = i + diff - large_size;
-	    dest->array[i] ^= src->array[p];
+	    dest->status->array[i] ^= src->status->array[p];
 	}
     }
 
@@ -48,7 +50,11 @@ extern "C" {
     void mtgp64_fast_jump(mtgp64_fast_t * mtgp64, const char * jump_string) {
 	mtgp64_fast_t work;
 	int bits;
-	memset(&work, 0, sizeof(mtgp64_fast_t));
+	mtgp64_params_fast_t params = mtgp64->params;
+	mtgp64_init(&work, &params, 0);
+	memset(&work.status->array[0], 0,
+	       sizeof(uint64_t) * work.status->large_size);
+	work.status->idx = work.status->large_size - 1;
 
 	for (int i = 0; jump_string[i] != '\0'; i++) {
 	    bits = jump_string[i];
@@ -64,11 +70,11 @@ extern "C" {
 		if ((bits & 1) != 0) {
 		    add(&work, mtgp64);
 		}
-		next_state(mtgp64);
+		mtgp64_next_state(mtgp64);
 		bits = bits >> 1;
 	    }
 	}
-	*mtgp64 = work;
+	mtgp64_copy(mtgp64, &work);
     }
 
 #if defined(__cplusplus)
