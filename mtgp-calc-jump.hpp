@@ -1,5 +1,5 @@
-#ifndef CALC_JUMP_HPP
-#define CALC_JUMP_HPP
+#ifndef MTGP_CALC_JUMP_HPP
+#define MTGP_CALC_JUMP_HPP
 /**
  * @file calc_jump.hpp
  *
@@ -41,6 +41,37 @@ static inline void polytostring(std::string& x, NTL::GF2X& polynomial)
     }
     ss << flush;
     x = ss.str();
+}
+
+static inline void polytoarray(uint32_t array[],
+			       int size,
+			       NTL::GF2X& polynomial)
+{
+    using namespace NTL;
+    using namespace std;
+
+    long degree = deg(polynomial);
+    uint32_t buff;
+    int index = 0;
+    if (size == 0) {
+	return;
+    } else if (size < degree / 32 + 2) {
+	array[0] = 0;
+	return;
+    }
+    for (int i = 0; i <= degree; i+=32) {
+	buff = 0;
+	for (int j = 0; j < 32; j++) {
+	    if (IsOne(coeff(polynomial, i + j))) {
+		buff |= 1 << j;
+	    } else {
+		buff &= (0xffffffffU ^ (1 << j));
+	    }
+	}
+	array[index] = buff;
+	index++;
+    }
+    array[index] = 0;
 }
 
 /**
@@ -85,6 +116,25 @@ static inline void stringtopoly(NTL::GF2X& poly, std::string& str)
  * @param step jump step of internal state
  * @param characteristic polynomial
  */
+static inline void calc_jump(uint32_t array[],
+			     int size,
+			     NTL::ZZ& step,
+			     NTL::GF2X& characteristic)
+{
+    using namespace NTL;
+    using namespace std;
+    GF2X jump;
+    PowerXMod(jump, step, characteristic);
+    polytoarray(array, size, jump);
+}
+
+/**
+ * calculate the jump polynomial.
+ * SFMT generates 4 32-bit integers from one internal state.
+ * @param jump_str output string which represents jump polynomial.
+ * @param step jump step of internal state
+ * @param characteristic polynomial
+ */
 static inline void calc_jump(std::string& jump_str,
 			     NTL::ZZ& step,
 			     NTL::GF2X& characteristic)
@@ -95,5 +145,4 @@ static inline void calc_jump(std::string& jump_str,
     PowerXMod(jump, step, characteristic);
     polytostring(jump_str, jump);
 }
-
 #endif

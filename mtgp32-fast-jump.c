@@ -74,7 +74,7 @@ extern "C" {
 		bits = bits >> 1;
 	    }
 	}
-	copy(mtgp32, &work);
+	mtgp32_copy(mtgp32, &work);
     }
 
 #if defined(__cplusplus)

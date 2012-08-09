@@ -45,6 +45,13 @@ void calc_characteristic(string& str, mtgp32_fast_t * mtgp32)
     polytostring(str, poly);
 }
 
+void calc_characteristic(uint32_t array[], int size, mtgp32_fast_t * mtgp32)
+{
+    GF2X poly;
+    calc_characteristic(poly, mtgp32);
+    polytoarray(array, size, poly);
+}
+
 
 #if defined(MAIN)
 int main(int argc, char *argv[]) {
@@ -96,9 +103,12 @@ int main(int argc, char *argv[]) {
 	return -1;
     }
     mtgp32_print_idstring(&mtgp32, stdout);
+#if 0
     string s;
     calc_characteristic(s, &mtgp32);
     printf("%s\n", s.c_str());
+#else
+#endif
     mtgp32_free(&mtgp32);
     return 0;
 }

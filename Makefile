@@ -79,14 +79,18 @@ test32-ref: mtgp32-ref.h mtgp32-ref.c mtgp32-param-ref.o
 test32-fast: mtgp32-fast.h mtgp32-fast.c mtgp32-param-fast.o
 	${CC} ${CCFLAGS} -DMAIN=1 -o $@ mtgp32-fast.c mtgp32-param-fast.o
 
-calc-poly32: calc-poly32.cpp mtgp32-fast.h mtgp32-fast.o mtgp32-param-fast.o
-	${CPP} ${CPPFLAGS} -DMAIN=1 -o $@ calc-poly32.cpp mtgp32-fast.o \
+mtgp-calc-jump: mtgp-calc-jump.cpp mtgp-calc-jump.hpp
+	${CPP} ${CPPFLAGS} -o $@ mtgp-calc-jump.cpp ${LINKOPT}
+
+mtgp32-calc-poly: mtgp32-calc-poly.cpp mtgp32-fast.h mtgp32-fast.o \
+	mtgp32-param-fast.o
+	${CPP} ${CPPFLAGS} -DMAIN=1 -o $@ mtgp32-calc-poly.cpp mtgp32-fast.o \
 	mtgp32-param-fast.o ${LINKOPT}
 
-test-jump32: test-jump32.cpp calc-poly32.cpp mtgp-calc-jump.hpp \
+test-jump32: test-jump32.cpp mtgp32-calc-poly.cpp mtgp-calc-jump.hpp \
 	mtgp32-fast.h mtgp32-fast.o mtgp32-fast-jump.o mtgp32-param-fast.o
 	${CPP} ${CPPFLAGS}  -o $@ test-jump32.cpp \
-	calc-poly32.cpp mtgp32-fast.o mtgp32-fast-jump.o \
+	mtgp32-calc-poly.cpp mtgp32-fast.o mtgp32-fast-jump.o \
 	mtgp32-param-fast.o ${LINKOPT}
 
 mtgp64-calc-poly: mtgp64-calc-poly.cpp mtgp64-fast.h mtgp64-fast.o \

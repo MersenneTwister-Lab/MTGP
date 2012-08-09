@@ -7,11 +7,7 @@
 #include "mtgp32-jump-kernel.cuh"
 
 #if defined(CHECK)
-#include <NTL/GF2X.h>
-#include <NTL/ZZ.h>
-#include "mtgp-calc-jump.hpp"
 #include "mtgp32-fast-jump.h"
-#include "mtgp32-char11213.h"
 /**
  *
  */
@@ -23,13 +19,6 @@ static int init_check_data(int block_num, uint32_t seed)
 	printf("can't check block num > 10 %d\n", block_num);
 	return 1;
     }
-    ZZ step;
-    ZZ jstep;
-    string jump_str;
-    GF2X characteristic;
-    stringtopoly(characteristic, MTGP32_CHAR11213);
-    step = 3;
-    step = power(step, 162);
     for (int i = 0; i < block_num; i++) {
 	int rc = mtgp32_init(&mtgp32[i],
 			     &mtgp32_params_fast_11213[0],
@@ -37,12 +26,9 @@ static int init_check_data(int block_num, uint32_t seed)
 	if (rc) {
 	    return rc;
 	}
-	if (i == 0) {
-	    continue;
+	for (int j = 0; j < i; j++) {
+	    mtgp32_fast_jump(&mtgp32[i], MTGP32_JUMP2_256);
 	}
-	jstep = step * i;
-	calc_jump(jump_str, jstep, characteristic);
-	mtgp32_fast_jump(&mtgp32[i], jump_str);
     }
     return 0;
 }

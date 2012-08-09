@@ -21,5 +21,6 @@
 
 void calc_characteristic(NTL::GF2X& poly, mtgp32_fast_t * mtgp32);
 void calc_characteristic(std::string& str, mtgp32_fast_t * mtgp32);
+void calc_characteristic(uint32_t array[], int size, mtgp32_fast_t * mtgp32);
 
 #endif

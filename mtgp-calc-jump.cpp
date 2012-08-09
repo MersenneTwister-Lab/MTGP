@@ -45,9 +45,11 @@ int main(int argc, char * argv[]) {
     long no = 0;
     GF2X lcmpoly;
     read_file(lcmpoly, no, filename);
+    long degree = deg(lcmpoly);
     ZZ step;
     stringstream ss(step_string);
     ss >> step;
+#if defined(STRING_OUTPUT)
     string jump_str;
     calc_jump(jump_str, step, lcmpoly);
 #if defined(DEBUG)
@@ -55,6 +57,22 @@ int main(int argc, char * argv[]) {
 #endif
     cout << "jump polynomial:" << endl;
     cout << jump_str << endl;
+#else
+    int size = degree / 32 + 2;
+    uint32_t array[size];
+    calc_jump(array, size, step, lcmpoly);
+    cout << "/* jump step:" << step_string << " */" << endl;
+    cout << "uint32_t jump_array[] = {";
+    for (int i = 0; i < size; i++) {
+	if (i % 5 == 0) {
+	    cout << endl;
+	}
+	cout << "0x" << setfill('0') << setw(8) << hex << array[i]
+	     << ",";
+    }
+    cout << endl;
+    cout << "};" << endl;
+#endif
     return 0;
 }
 

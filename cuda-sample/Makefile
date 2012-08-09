@@ -7,7 +7,7 @@
 #VERB = -Xptxas=-v
 
 NVCC = nvcc ${DEBUG} ${ARCH} -D__STDC_FORMAT_MACROS -I../ \
-	-D__STDC_CONSTANT_MACROS ${VERB}
+	-D__STDC_CONSTANT_MACROS ${VERB} --compiler-options -std=c99
 
 MTGP32_INC = ../mtgp32-fast.h ../mtgp32-fast.c mtgp-util.cuh mtgp-util.cu
 MTGP64_INC = ../mtgp64-fast.h ../mtgp64-fast.c mtgp-util.cuh mtgp-util.cu
@@ -38,8 +38,14 @@ sample32-cuda23209-tex: mtgp32-cuda23209-tex.cu ${MTGP32_INC} \
 	${NVCC} -o $@ mtgp32-cuda23209-tex.cu ../mtgp32-param-fast.c \
 	${MTGP32_SRC} ${CUDALINK}
 
-sample32-jump1: mtgp32-sample-jump1-host.cu ../mtgp32-param-fast.c
+sample32-jump1: mtgp32-sample-jump1-host.cu mtgp32-jump-kernel.cuh \
+	../mtgp32-param-fast.c
 	${NVCC} -DCHECK -o $@ mtgp32-sample-jump1-host.cu \
+	../mtgp32-param-fast.c ../mtgp32-fast-jump.c \
+	${MTGP32_SRC} ${CUDALINK}
+
+sample32-jump1-array: mtgp32-sample-jump1-host.cu ../mtgp32-param-fast.c
+	${NVCC} -DCHECK -DJUMP_ARRAY -o $@ mtgp32-sample-jump1-host.cu \
 	../mtgp32-param-fast.c ../mtgp32-fast-jump.c \
 	${MTGP32_SRC} ${CUDALINK}
 

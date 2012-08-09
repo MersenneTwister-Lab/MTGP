@@ -35,7 +35,6 @@ using namespace std;
 static void test(mtgp32_fast_t * mtgp, GF2X& poly);
 static int check(mtgp32_fast_t *a, mtgp32_fast_t *b);
 static void print_state(mtgp32_fast_t * a, mtgp32_fast_t * b);
-static void copy(mtgp32_fast_t * dest, mtgp32_fast_t * src);
 static void print_sequence(mtgp32_fast_t * a, mtgp32_fast_t * b);
 static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic);
 
@@ -211,7 +210,7 @@ static void test(mtgp32_fast_t * mtgp, GF2X& characteristic)
 	cout << "mexp " << dec << mtgp->params.mexp << " jump "
 	     << test_count << " steps" << endl;
 //	*new_mtgp = *mtgp;
-	copy(new_mtgp, mtgp);
+	mtgp32_copy(new_mtgp, mtgp);
 	for (long i = 0; i < steps[index]; i++) {
 	    mtgp32_genrand_uint32(mtgp);
 	}

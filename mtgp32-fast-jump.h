@@ -24,7 +24,7 @@ extern "C" {
 #endif
     void mtgp32_fast_jump(mtgp32_fast_t * mtgp32, const char * jump_string);
 
-    inline static void copy(mtgp32_fast_t * dest, mtgp32_fast_t * src)
+    inline static void mtgp32_copy(mtgp32_fast_t * dest, mtgp32_fast_t * src)
     {
 	dest->params = src->params;
 	dest->status->idx = src->status->idx;
