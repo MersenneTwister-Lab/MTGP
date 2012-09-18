@@ -31,17 +31,29 @@ using namespace std;
 
 static void read_file(GF2X& lcmpoly, long line_no, const string& file);
 
+static void usage(char * name) {
+    cout << name << " [-a] jump-step poly-file" << endl;
+    cout << "    -a       : output array format" << endl;
+    cout << "    jump-step: a number between zero and 2^{MTGP_MEXP}-1.\n"
+	 << "               large decimal number is allowed." << endl;
+    cout << "    poly-file: output of calc-poly"
+	 << "file" << endl;
+}
 int main(int argc, char * argv[]) {
     if (argc <= 2) {
-	cout << argv[0] << " jump-step poly-file" << endl;
-	cout << "    jump-step: a number between zero and 2^{MTGP_MEXP}-1.\n"
-	     << "               large decimal number is allowed." << endl;
-	cout << "    poly-file: output of calc-poly"
-	     << "file" << endl;
+	usage(argv[0]);
 	return -1;
     }
-    string step_string = argv[1];
-    string filename = argv[2];
+    int offset = 0;
+    if (strcmp(argv[1],"-a") == 0) {
+	if (argc <= 3) {
+	    usage(argv[0]);
+	    return -1;
+	}
+	offset = 1;
+    }
+    string step_string = argv[offset + 1];
+    string filename = argv[offset + 2];
     long no = 0;
     GF2X lcmpoly;
     read_file(lcmpoly, no, filename);
@@ -49,30 +61,30 @@ int main(int argc, char * argv[]) {
     ZZ step;
     stringstream ss(step_string);
     ss >> step;
-#if defined(STRING_OUTPUT)
-    string jump_str;
-    calc_jump(jump_str, step, lcmpoly);
+    if (offset == 0) {
+	string jump_str;
+	calc_jump(jump_str, step, lcmpoly);
 #if defined(DEBUG)
-    cout << "deg lcmpoly:" << dec << deg(lcmpoly) << endl;
+	cout << "deg lcmpoly:" << dec << deg(lcmpoly) << endl;
 #endif
-    cout << "jump polynomial:" << endl;
-    cout << jump_str << endl;
-#else
-    int size = degree / 32 + 2;
-    uint32_t array[size];
-    calc_jump(array, size, step, lcmpoly);
-    cout << "/* jump step:" << step_string << " */" << endl;
-    cout << "uint32_t jump_array[] = {";
-    for (int i = 0; i < size; i++) {
-	if (i % 5 == 0) {
-	    cout << endl;
+	cout << "jump polynomial:" << endl;
+	cout << jump_str << endl;
+    } else {
+	int size = degree / 32 + 2;
+	uint32_t array[size];
+	calc_jump(array, size, step, lcmpoly);
+	cout << "/* jump step:" << step_string << " */" << endl;
+	cout << "uint32_t jump_array[] = {";
+	for (int i = 0; i < size; i++) {
+	    if (i % 5 == 0) {
+		cout << endl;
+	    }
+	    cout << "0x" << setfill('0') << setw(8) << hex << array[i]
+		 << ",";
 	}
-	cout << "0x" << setfill('0') << setw(8) << hex << array[i]
-	     << ",";
+	cout << endl;
+	cout << "};" << endl;
     }
-    cout << endl;
-    cout << "};" << endl;
-#endif
     return 0;
 }
 

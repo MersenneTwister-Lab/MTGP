@@ -53,7 +53,7 @@ __constant__ uint32_t mtgp32_single_temper_tbl[MTGP32_TS]
 __constant__ uint32_t mtgp32_mask = 0xfff80000;
 __constant__ uint32_t mtgp32_non_zero = 0x4d544750;
 
-/* jump polynomial for 2^256 step jump */
+/* jump polynomial for 3^162 steps jump */
 #include "mtgp32-jump-table.cuh"
 
 /**
@@ -380,25 +380,26 @@ __device__ void mtgp32_init_by_array(uint32_t *seed_array, int length) {
  *
  *
  */
-__device__ void long_jump(int bid, int tid)
+__device__ void mtgp32_table_jump(int bid, int tid, uint32_t jump_table[][MTGP32_N + 1])
 {
     for (int i = 0; i < 32; i++) {
 	if ((bid & (1 << i)) == 0) {
 	    continue;
 	}
 	if (i % 2 == 0) {
-	    mtgp32_jump(mtgp32_jwork, mtgp32_jstatus, mtgp32_jump_table[i / 2]);
+	    mtgp32_jump(mtgp32_jwork, mtgp32_jstatus, jump_table[i / 2]);
 	    __syncthreads();
 	    mtgp32_jstatus[tid] = mtgp32_jwork[tid];
 	    __syncthreads();
 	} else {
-	    mtgp32_jump(mtgp32_jwork, mtgp32_jstatus, mtgp32_jump_table[i / 2]);
+	    mtgp32_jump(mtgp32_jwork, mtgp32_jstatus, jump_table[i / 2]);
 	    __syncthreads();
-	    mtgp32_jump(mtgp32_jstatus, mtgp32_jwork, mtgp32_jump_table[i / 2]);
+	    mtgp32_jump(mtgp32_jstatus, mtgp32_jwork, jump_table[i / 2]);
 	    __syncthreads();
 	}
     }
 }
+
 /**
  * kernel function.
  * This function changes internal state of MTGP to jumped state.
@@ -416,7 +417,7 @@ __global__ void mtgp32_jump_long_seed_kernel(mtgp32_kernel_status_t* d_status,
     __syncthreads();
 
     // jump
-    long_jump(bid, tid);
+    mtgp32_table_jump(bid, tid, mtgp32_jump_table);
     d_status[bid].status[tid] = mtgp32_jstatus[tid];
     __syncthreads();
 }
@@ -437,7 +438,52 @@ __global__ void mtgp32_jump_long_array_kernel(mtgp32_kernel_status_t * d_status,
     mtgp32_init_by_array(seed_array, length);
     __syncthreads();
 
-    long_jump(bid, tid);
+    mtgp32_table_jump(bid, tid, mtgp32_jump_table);
+    d_status[bid].status[tid] = mtgp32_jstatus[tid];
+}
+
+/**
+ * kernel function.
+ * This function changes internal state of MTGP to jumped state.
+ * threads per block should be MTGP32_N.
+ *
+ * @param[in,out] d_status kernel I/O data
+ */
+__global__ void mtgp32_jump_seed_kernel(mtgp32_kernel_status_t* d_status,
+					uint32_t jump_table[][MTGP32_N + 1],
+					uint32_t seed)
+{
+    const int bid = blockIdx.x;
+    const int tid = threadIdx.x;
+
+    mtgp32_init_state(seed);
+    __syncthreads();
+
+    // jump
+    mtgp32_table_jump(bid, tid, jump_table);
+    d_status[bid].status[tid] = mtgp32_jstatus[tid];
+    __syncthreads();
+}
+
+/**
+ * kernel function.
+ * This function changes internal state of MTGP to jumped state.
+ * threads per block should be MTGP32_N.
+ *
+ * @param[in,out] d_status kernel I/O data
+ */
+__global__ void mtgp32_jump_array_kernel(mtgp32_kernel_status_t * d_status,
+					 uint32_t jump_table[][MTGP32_N + 1],
+					 uint32_t * seed_array,
+					 int length)
+{
+    const int bid = blockIdx.x;
+    const int tid = threadIdx.x;
+
+    mtgp32_init_by_array(seed_array, length);
+    __syncthreads();
+
+    mtgp32_table_jump(bid, tid, jump_table);
     d_status[bid].status[tid] = mtgp32_jstatus[tid];
 }
 

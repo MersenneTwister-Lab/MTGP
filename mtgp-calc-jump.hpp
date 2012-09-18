@@ -145,4 +145,5 @@ static inline void calc_jump(std::string& jump_str,
     PowerXMod(jump, step, characteristic);
     polytostring(jump_str, jump);
 }
+
 #endif
