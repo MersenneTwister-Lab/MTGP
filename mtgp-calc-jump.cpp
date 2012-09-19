@@ -70,7 +70,7 @@ int main(int argc, char * argv[]) {
 	cout << "jump polynomial:" << endl;
 	cout << jump_str << endl;
     } else {
-	int size = degree / 32 + 2;
+	int size = degree / 32 + 1;
 	uint32_t array[size];
 	calc_jump(array, size, step, lcmpoly);
 	cout << "/* jump step:" << step_string << " */" << endl;

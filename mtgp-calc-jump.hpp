@@ -55,7 +55,7 @@ static inline void polytoarray(uint32_t array[],
     int index = 0;
     if (size == 0) {
 	return;
-    } else if (size < degree / 32 + 2) {
+    } else if (size < degree / 32 + 1) {
 	array[0] = 0;
 	return;
     }
@@ -71,7 +71,7 @@ static inline void polytoarray(uint32_t array[],
 	array[index] = buff;
 	index++;
     }
-    array[index] = 0;
+    //array[index] = 0;
 }
 
 /**

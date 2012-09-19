@@ -1,6 +1,13 @@
 /**
- * Sample host program for far jump
- * 3<sup>162</sup> steps jump ahead
+ * Sample host program to generate a sequence
+ * using jump and parallel generation.
+ *
+ * 1. make initial state from a seed
+ * 2. calculate initial position for each work group.
+ *    (This step is time comsuming)
+ * 3. Loop:
+ *   3.1 generate sub-sequences parallel
+ *   3.2 jump for next loop
  */
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 #define __CL_ENABLE_EXCEPTIONS
@@ -11,31 +18,33 @@
 #include <CL/cl.hpp>
 #endif
 
+//#include <exception>
 #include <cstddef>
+#include <cfloat>
+#include <ctime>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
 #include <fstream>
 #include <vector>
 #include <map>
 #include <string>
-#include <memory.h>
+#include <NTL/GF2X.h>
+#include <NTL/ZZ.h>
 
 typedef uint32_t uint;
+#include "mtgp32-calc-poly.hpp"
+#include "mtgp-calc-jump.hpp"
 #include "mtgp32-fast-jump.h"
 #include "mtgp32-sample-jump-common.h"
-#include "mtgp32-jump-string.h"
-#include "mtgp32-jump-table.h"
 #include "parse_opt.h"
 
 using namespace std;
 using namespace cl;
+using namespace NTL;
 
 /* ================== */
 /* OpenCL information */
 /* ================== */
-//typedef pair<const char*, ::size_t> Lines;
-//typedef std::vector<Lines> Sources;
 static std::vector<cl::Platform> platforms;
 static std::vector<cl::Device> devices;
 static cl::Context context;
@@ -43,10 +52,24 @@ static std::string programBuffer;
 static cl::Program program;
 static cl::Program::Sources source;
 static cl::CommandQueue queue;
+static std::string errorMessage;
 
-#define MAX_BLOCK_NUM 20
-static mtgp32_fast_t mtgp32[MAX_BLOCK_NUM];
+/* ========================= */
+/* Sample global variables
+/* ========================= */
+/**
+ * max size of jump table
+ * 2^(2*MAX_JUMP_TABLE-1) work groups will be supported
+ * currently max 2048 work groups are supported
+ */
+#define MAX_JUMP_TABLE 6
+static mtgp32_fast_t mtgp32;
 static bool thread_max = false;
+/* small size for check */
+static const int jump_step = MTGP32_LS * 10;
+static ZZ jump;
+static uint32_t jump_poly[MTGP32_N];
+static uint32_t jump_initial[MTGP32_N * MAX_JUMP_TABLE];
 
 /* ========================= */
 /* OpenCL interface function */
@@ -56,10 +79,11 @@ static void getPlatforms()
 #if defined(DEBUG)
     cout << "start get platform" << endl;
 #endif
+    errorMessage = "getPlatform failed";
     cl_int err = Platform::get(&platforms);
     if(err != CL_SUCCESS)
     {
-        cout << "getPlatform failed err:" << err << endl;
+        cout << "getPlatform failed" << err << endl;
 	return;
     }
 #if defined(DEBUG)
@@ -68,6 +92,7 @@ static void getPlatforms()
 	cout << platforms[i].getInfo<CL_PLATFORM_VENDOR>() << endl;
     }
 #endif
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get platform" << endl;
 #endif
@@ -79,12 +104,14 @@ static void getDevices()
     cout << "start get devices" << endl;
 #endif
     cl_int err;
+    errorMessage = "getDevices failed";
     err = platforms[0].getDevices(CL_DEVICE_TYPE_GPU, &devices);
     if(err != CL_SUCCESS)
     {
         cout << "getDevices failed err:" << err << endl;
 	return;
     }
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get devices" << endl;
 #endif
@@ -95,8 +122,10 @@ static void getContext()
 #if defined(DEBUG)
     cout << "start get context" << endl;
 #endif
+    errorMessage = "create context failed";
     Context local_context(devices);
     context = local_context;
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get context" << endl;
 #endif
@@ -108,6 +137,7 @@ static void readFile(const char * filename)
     cout << "start read file" << endl;
 #endif
     ifstream ifs;
+    errorMessage = "read file failed";
     ifs.open(filename, fstream::in | fstream::binary);
     if (ifs) {
         ifs.seekg(0, std::fstream::end);
@@ -120,14 +150,16 @@ static void readFile(const char * filename)
 	programBuffer = buf;
 	delete[] buf;
     }
-#if defined(DEBUG)
+#if defined(DEBUG) && 0
     cout << "source:" << endl;
     cout << programBuffer << endl;
 #endif
+    errorMessage = "create sources failed";
     cl::Program::Sources local_source(1,
 				      make_pair(programBuffer.c_str(),
 						programBuffer.size()));
     source = local_source;
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end read file" << endl;
 #endif
@@ -139,6 +171,7 @@ static void getProgram()
     cout << "start get program" << endl;
 #endif
     cl_int err;
+    errorMessage = "create program failed";
     Program local_program = Program(context, source, &err);
     if (err != CL_SUCCESS) {
 	cout << "get program err:" << err << endl;
@@ -148,9 +181,10 @@ static void getProgram()
     cout << "start build" << endl;
 #endif
     const char * option = "";
+    errorMessage = "program build failed";
     try {
 	err = local_program.build(devices, option);
-    } catch (Error e) {
+    } catch (cl::Error e) {
 	if (e.err() != CL_SUCCESS) {
 	    if (e.err() == CL_BUILD_PROGRAM_FAILURE) {
 		std::string str
@@ -166,6 +200,7 @@ static void getProgram()
 	throw e;
     }
     program = local_program;
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get program" << endl;
 #endif
@@ -177,6 +212,7 @@ static void getCommandQueue()
     cout << "start get command queue" << endl;
 #endif
     cl_int err;
+    errorMessage = "create command queue failed";
     CommandQueue local_queue(context,
 			     devices[0],
 			     CL_QUEUE_PROFILING_ENABLE,
@@ -187,6 +223,7 @@ static void getCommandQueue()
 	return;
     }
     queue = local_queue;
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get command queue" << endl;
 #endif
@@ -199,11 +236,13 @@ static int getMaxGroupSize()
 #endif
     ::size_t size;
     cl_int err;
+    errorMessage = "device getinfo(CL_DEVICE_MAX_WORK_GROUP_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE, &size);
     if (err != CL_SUCCESS) {
 	cout << "device getinfo(CL_DEVICE_MAX_WORK_GROUP_SIZE) err:"
 	     << dec << err << endl;
     }
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get max group size" << endl;
 #endif
@@ -217,11 +256,13 @@ static cl_ulong getLocalMemSize()
 #endif
     cl_int err;
     cl_ulong size;
+    errorMessage = "device getinfo(CL_DEVICE_LOCAL_MEM_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_LOCAL_MEM_SIZE, &size);
     if (err != CL_SUCCESS) {
 	cout << "device getinfo(CL_DEVICE_LOCAL_MEM_SIZE) err:"
 	     << dec << err << endl;
     }
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get local mem size" << endl;
 #endif
@@ -235,11 +276,13 @@ static int getMaxWorkItemSize(int dim)
 #endif
     std::vector<std::size_t> vec;
     cl_int err;
+    errorMessage = "device getinfo(CL_DEVICE_MAX_WORK_ITEM_SIZE) failed";
     err = devices[0].getInfo(CL_DEVICE_MAX_WORK_ITEM_SIZES, &vec);
     if (err != CL_SUCCESS) {
 	cout << "device getinfo(CL_DEVICE_MAX_WORK_ITEM_SIZES) err:"
 	     << dec << err << endl;
     }
+    errorMessage = "";
 #if defined(DEBUG)
     cout << "end get max work item size :" << dec << vec[dim] << endl;
 #endif
@@ -250,31 +293,69 @@ static int getMaxWorkItemSize(int dim)
 /* ========================= */
 /* mtgp32 sample code        */
 /* ========================= */
-static int init_check_data(mtgp32_fast_t mtgp32[],
-			   int block_num,
+
+/**
+ * prepare jump polynomial.
+ *
+ * this step may be pre-computed in practical use.
+ */
+static void make_jump_table(int group_num)
+{
+#if defined(DEBUG)
+    cout << "make_jump_table start" << endl;
+#endif
+    mtgp32_fast_t dummy;
+    int rc = mtgp32_init(&dummy, &mtgp32_params_fast_11213[0], 1);
+    if (rc) {
+	cerr << "init error" << endl;
+	throw cl::Error(rc, "mtgp32 init error");
+    }
+    GF2X poly;
+    clock_t start = clock();
+    calc_characteristic(poly, &dummy);
+    clock_t end = clock();
+    double time = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
+    cout << "calc_characteristic: " << dec << time << "ms" << endl;
+    ZZ step;
+    step = jump_step;
+    start = clock();
+    for (int i = 0; i < MAX_JUMP_TABLE; i++) {
+	calc_jump(&jump_initial[i * MTGP32_N],
+		  MTGP32_N,
+		  step,
+		  poly);
+	step *= 4;
+    }
+    step = jump_step;
+    step *= group_num - 1;
+    calc_jump(jump_poly, MTGP32_N, step, poly);
+    end = clock();
+    time = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
+    cout << "make jump table: " << dec << time << "ms" << endl;
+#if defined(DEBUG)
+    cout << "step:" << dec << step << endl;
+    cout << "jump_poly[0]:" << hex << jump_poly[0] << endl;
+    cout << "jump_poly[1]:" << hex << jump_poly[1] << endl;
+    cout << "jump_initial[0]:" << hex << jump_initial[0 * MTGP32_N] << endl;
+    cout << "jump_initial[1]:" << hex << jump_initial[1 * MTGP32_N] << endl;
+    cout << "jump_initial[2]:" << hex << jump_initial[2 * MTGP32_N] << endl;
+#endif
+#if defined(DEBUG)
+    cout << "make_jump_table end" << endl;
+#endif
+}
+
+static int init_check_data(mtgp32_fast_t * mtgp32,
 			   uint32_t seed)
 {
 #if defined(DEBUG)
     cout << "init_check_data start" << endl;
 #endif
-    if (block_num > MAX_BLOCK_NUM) {
-	cout << "can't check block number > " << dec << MAX_BLOCK_NUM
-	     << block_num << endl;
-	return 1;
-    }
-    for (int i = 0; i < block_num; i++) {
-	int rc = mtgp32_init(&mtgp32[i],
-			     &mtgp32_params_fast_11213[0],
-			     seed);
-	if (rc) {
-	    return rc;
-	}
-	if (i == 0) {
-	    continue;
-	}
-	for (int j = 0; j < i; j++) {
-	    mtgp32_fast_jump(&mtgp32[i], mtgp32_jump_string);
-	}
+    int rc = mtgp32_init(mtgp32,
+			 &mtgp32_params_fast_11213[0],
+			 seed);
+    if (rc) {
+	return rc;
     }
 #if defined(DEBUG)
     cout << "init_check_data end" << endl;
@@ -282,30 +363,19 @@ static int init_check_data(mtgp32_fast_t mtgp32[],
     return 0;
 }
 
-static int init_check_data_array(mtgp32_fast_t mtgp32[],
-				 int block_num,
+static int init_check_data_array(mtgp32_fast_t * mtgp32,
 				 uint32_t seed_array[],
 				 int size)
 {
 #if defined(DEBUG)
     cout << "init_check_data_array start" << endl;
 #endif
-    if (block_num > MAX_BLOCK_NUM) {
-	cout << "can't check block number > " << dec << MAX_BLOCK_NUM
-	     << block_num << endl;
-	return 1;
-    }
-    for (int i = 0; i < block_num; i++) {
-	int rc = mtgp32_init_by_array(&mtgp32[i],
-				      &mtgp32_params_fast_11213[0],
-				      seed_array,
-				      size);
-	if (rc) {
-	    return rc;
-	}
-	for (int j = 0; j < i; j++) {
-	    mtgp32_fast_jump(&mtgp32[i], mtgp32_jump_string);
-	}
+    int rc = mtgp32_init_by_array(mtgp32,
+				  &mtgp32_params_fast_11213[0],
+				  seed_array,
+				  size);
+    if (rc) {
+	return rc;
     }
 #if defined(DEBUG)
     cout << "init_check_data_array end" << endl;
@@ -313,53 +383,38 @@ static int init_check_data_array(mtgp32_fast_t mtgp32[],
     return 0;
 }
 
-static void free_check_data(mtgp32_fast_t mtgp32[], int block_num)
+static void free_check_data(mtgp32_fast_t * mtgp32)
 {
 #if defined(DEBUG)
     cout << "free_check_data start" << endl;
 #endif
-    for (int i = 0; i < block_num; i++) {
-	mtgp32_free(&mtgp32[i]);
-    }
+    mtgp32_free(mtgp32);
 #if defined(DEBUG)
     cout << "free_check_data end" << endl;
 #endif
 }
 
-static void check_data(uint32_t * h_data,
-		       int num_data,
-		       int block_num)
+static void check_data(uint32_t * h_data, int num_data)
 {
 #if defined(DEBUG)
     cout << "check_data start" << endl;
 #endif
-    int size = num_data / block_num;
-#if defined(DEBUG)
-    cout << "size = " << dec << size << endl;
-#endif
-    if (block_num > MAX_BLOCK_NUM) {
-	cout << "can't check block number > " << dec << MAX_BLOCK_NUM
-	     << " current:" << block_num << endl;
-	return;
-    }
     bool error = false;
-    for (int i = 0; i < block_num; i++) {
-	bool disp_flg = true;
-	int count = 0;
-	for (int j = 0; j < size; j++) {
-	    uint32_t r = mtgp32_genrand_uint32(&mtgp32[i]);
-	    if ((h_data[i * size + j] != r) && disp_flg) {
-		cout << "mismatch i = " << dec << i
-		     << " j = " << dec << j
-		     << " data = " << hex << h_data[i * size + j]
-		     << " r = " << hex << r << endl;
-		cout << "check_data check N.G!" << endl;
-		count++;
-		error = true;
-	    }
-	    if (count > 10) {
-		disp_flg = false;
-	    }
+    bool disp_flg = true;
+    int count = 0;
+    for (int j = 0; j < num_data; j++) {
+	uint32_t r = mtgp32_genrand_uint32(&mtgp32);
+	if ((h_data[j] != r) && disp_flg) {
+	    cout << "mismatch"
+		 << " j = " << dec << j
+		 << " data = " << hex << h_data[j]
+		 << " r = " << hex << r << endl;
+	    cout << "check_data check N.G!" << endl;
+	    count++;
+	    error = true;
+	}
+	if (count > 10) {
+	    disp_flg = false;
 	}
     }
     if (!error) {
@@ -370,46 +425,36 @@ static void check_data(uint32_t * h_data,
 #endif
 }
 
-static void check_status(uint * h_status,
-			 int block_num)
+static void check_single(float * h_data, int num_data)
 {
 #if defined(DEBUG)
-    cout << "check_status start" << endl;
+    cout << "check_single start" << endl;
 #endif
-    int counter = 0;
-    if (block_num > MAX_BLOCK_NUM) {
-	cout << "can't check block number > " << dec << MAX_BLOCK_NUM
-	     << " current:" << block_num << endl;
-	return;
-    }
-    int large_size = mtgp32[0].status->large_size;
-    for (int i = 0; i < block_num; i++) {
-	for (int j = 0; j < MTGP32_N; j++) {
-	    int idx = mtgp32[i].status->idx - MTGP32_N + 1 + large_size;
-	    uint32_t x = h_status[i * MTGP32_N + j];
-	    uint32_t r = mtgp32[i].status->array[(j + idx) % large_size];
-	    if (j == 0) {
-		x = x & mtgp32[i].params.mask;
-		r = r & mtgp32[i].params.mask;
-	    }
-	    if (x != r) {
-		cout << "mismatch i = " << dec << i
-		     << " j = " << dec << j
-		     << " device = " << hex << x
-		     << " host = " << hex << r << endl;
-		cout << "check_status check N.G!" << endl;
-		counter++;
-	    }
-	    if (counter > 10) {
-		return;
-	    }
+    bool error = false;
+    bool disp_flg = true;
+    int count = 0;
+    for (int j = 0; j < num_data; j++) {
+	float r =  mtgp32_genrand_close1_open2(&mtgp32);
+	if (!(-FLT_EPSILON <= h_data[j] - r &&
+	     h_data[j] - r <= FLT_EPSILON)
+	    && disp_flg) {
+	    cout << "mismatch"
+		 << " j = " << dec << j
+		 << " data = " << dec << h_data[j]
+		 << " r = " << dec << r << endl;
+	    cout << "check_data check N.G!" << endl;
+	    count++;
+	    error = true;
+	}
+	if (count > 10) {
+	    disp_flg = false;
 	}
     }
-    if (counter == 0) {
-	cout << "check_status check O.K!" << endl;
+    if (!error) {
+	cout << "check_single check O.K!" << endl;
     }
 #if defined(DEBUG)
-    cout << "check_status end" << endl;
+    cout << "check_single end" << endl;
 #endif
 }
 
@@ -423,7 +468,7 @@ double get_time(Event& event)
 
 void initialize_by_seed(options& opt,
 			Buffer& status_buffer,
-			int block,
+			int group,
 			uint32_t seed)
 {
 #if defined(DEBUG)
@@ -432,12 +477,12 @@ void initialize_by_seed(options& opt,
     // jump table
     Buffer jump_table_buffer(context,
 			     CL_MEM_READ_WRITE,
-			     MTGP32_N * 6 * sizeof(uint32_t));
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t));
     queue.enqueueWriteBuffer(jump_table_buffer,
 			     CL_TRUE,
 			     0,
-			     MTGP32_N * 6 * sizeof(uint32_t),
-			     mtgp32_jump_table);
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t),
+			     jump_initial);
 
     Kernel init_kernel(program, "mtgp32_jump_seed_kernel");
 #if defined(DEBUG)
@@ -453,12 +498,12 @@ void initialize_by_seed(options& opt,
     if (thread_max) {
 	local_item = MTGP32_TN;
     }
-    NDRange global(block * local_item);
+    NDRange global(group * local_item);
     NDRange local(local_item);
     Event event;
 #if defined(DEBUG)
-    cout << "global:" << dec << block * local_item << endl;
-    cout << "block:" << dec << block << endl;
+    cout << "global:" << dec << group * local_item << endl;
+    cout << "group:" << dec << group << endl;
     cout << "local:" << dec << local_item << endl;
 #endif
     queue.enqueueNDRangeKernel(init_kernel,
@@ -468,20 +513,22 @@ void initialize_by_seed(options& opt,
 			       NULL,
 			       &event);
     double time = get_time(event);
-    uint status[block * MTGP32_N];
+    cout << "initializing time = " << time * 1000 << "ms" << endl;
+#if 0
+    uint status[group * MTGP32_N];
     queue.enqueueReadBuffer(status_buffer,
 			    CL_TRUE,
 			    0,
-			    sizeof(uint32_t) * MTGP32_N * block,
+			    sizeof(uint32_t) * MTGP32_N * group,
 			    status);
-    cout << "initializing time = " << time * 1000 << "ms" << endl;
 #if defined(DEBUG)
     cout << "status[0]:" << hex << status[0] << endl;
     cout << "status[MTGP32_N - 1]:" << hex << status[MTGP32_N - 1] << endl;
     cout << "status[MTGP32_N]:" << hex << status[MTGP32_N] << endl;
     cout << "status[MTGP32_N + 1]:" << hex << status[MTGP32_N + 1] << endl;
 #endif
-    check_status(status, block);
+    check_status(status, group);
+#endif
 #if defined(DEBUG)
     cout << "initialize_by_seed end" << endl;
 #endif
@@ -489,7 +536,7 @@ void initialize_by_seed(options& opt,
 
 void initialize_by_array(options& opt,
 			 Buffer& status_buffer,
-			 int block,
+			 int group,
 			 uint32_t seed_array[],
 			 int seed_size)
 {
@@ -499,12 +546,12 @@ void initialize_by_array(options& opt,
     // jump table
     Buffer jump_table_buffer(context,
 			     CL_MEM_READ_WRITE,
-			     MTGP32_N * 6 * sizeof(uint32_t));
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t));
     queue.enqueueWriteBuffer(jump_table_buffer,
 			     CL_TRUE,
 			     0,
-			     MTGP32_N * 6 * sizeof(uint32_t),
-			     mtgp32_jump_table);
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t),
+			     jump_initial);
 
     Buffer seed_array_buffer(context,
 			     CL_MEM_READ_WRITE,
@@ -523,7 +570,7 @@ void initialize_by_array(options& opt,
     if (thread_max) {
 	local_item = MTGP32_TN;
     }
-    NDRange global(block * local_item);
+    NDRange global(group * local_item);
     NDRange local(local_item);
     Event event;
     queue.enqueueNDRangeKernel(init_kernel,
@@ -533,16 +580,61 @@ void initialize_by_array(options& opt,
 			       NULL,
 			       &event);
     double time = get_time(event);
-    uint status[block * MTGP32_N];
+#if 0
+    uint status[group * MTGP32_N];
     queue.enqueueReadBuffer(status_buffer,
 			    CL_TRUE,
 			    0,
-			    sizeof(uint32_t) * MTGP32_N * block,
+			    sizeof(uint32_t) * MTGP32_N * group,
 			    status);
     cout << "initializing time = " << time * 1000 << "ms" << endl;
-    check_status(status, block);
+    check_status(status, group);
+#endif
 #if defined(DEBUG)
     cout << "initialize_by_array end" << endl;
+#endif
+}
+
+void status_jump(options& opt, Buffer& status_buffer, int group)
+{
+#if defined(DEBUG)
+    cout << "jump start" << endl;
+#endif
+    // jump table
+    Buffer jump_table_buffer(context,
+			     CL_MEM_READ_WRITE,
+			     MTGP32_N * sizeof(uint32_t));
+    queue.enqueueWriteBuffer(jump_table_buffer,
+			     CL_TRUE,
+			     0,
+			     MTGP32_N * sizeof(uint32_t),
+			     jump_poly);
+
+    Kernel init_kernel(program, "mtgp32_jump_kernel");
+    init_kernel.setArg(0, status_buffer);
+    init_kernel.setArg(1, jump_table_buffer);
+    int local_item = MTGP32_N;
+    if (thread_max) {
+	local_item = MTGP32_TN;
+    }
+    NDRange global(group * local_item);
+    NDRange local(local_item);
+    Event event;
+#if defined(DEBUG)
+    cout << "global:" << dec << group * local_item << endl;
+    cout << "group:" << dec << group << endl;
+    cout << "local:" << dec << local_item << endl;
+#endif
+    queue.enqueueNDRangeKernel(init_kernel,
+			       NullRange,
+			       global,
+			       local,
+			       NULL,
+			       &event);
+    double time = get_time(event);
+    cout << "jump time = " << time * 1000 << "ms" << endl;
+#if defined(DEBUG)
+    cout << "jump end" << endl;
 #endif
 }
 
@@ -637,7 +729,7 @@ void generate_uint32(int group_num,
 #if defined(DEBUG)
     cout << "generate_uint32 readbuffer end" << endl;
 #endif
-    check_data(output, data_size, group_num);
+    check_data(output, data_size);
     print_uint32(&output[0], data_size, item_num);
     double time = get_time(generate_event);
     cout << "generate time:" << time * 1000 << "ms" << endl;
@@ -679,6 +771,7 @@ void generate_single(int group_num,
 			    0,
 			    data_size * sizeof(float),
 			    &output[0]);
+    check_single(output, data_size);
     print_float(&output[0], data_size, item_num);
     double time = get_time(generate_event);
     delete[] output;
@@ -730,7 +823,9 @@ int test(int argc, char * argv[]) {
     }
     int local_mem_size = getLocalMemSize();
     if (local_mem_size < sizeof(uint32_t) * MTGP32_N * 2) {
-	cout << "local memory size not efficient:"
+	cout << "local memory size is smaller than min value("
+	     << dec << sizeof(uint32_t) * MTGP32_N * 2
+	     << ") current:"
 	     << dec << local_mem_size << endl;
 	return -1;
     }
@@ -738,33 +833,43 @@ int test(int argc, char * argv[]) {
 			 CL_MEM_READ_WRITE,
 			 sizeof(uint32_t) * MTGP32_N * opt.group_num);
 
+    make_jump_table(opt.group_num);
+    int data_count = opt.data_count;
+    int data_unit = jump_step * opt.group_num;
+
     // initialize by seed
     // generate uint32_t
-    init_check_data(mtgp32, opt.group_num, 1234);
+    init_check_data(&mtgp32, 1234);
     initialize_by_seed(opt, status_buffer, opt.group_num, 1234);
-    for (int i = 0; i < 2; i++) {
-	generate_uint32(opt.group_num, status_buffer, opt.data_count );
+    while (data_count > 0) {
+	generate_uint32(opt.group_num, status_buffer, data_unit);
+	status_jump(opt, status_buffer, opt.group_num);
+	data_count -= data_unit;
     }
-    free_check_data(mtgp32, opt.group_num);
+    free_check_data(&mtgp32);
 
     // initialize by array
     // generate single float
     uint32_t seed_array[5] = {1, 2, 3, 4, 5};
-    init_check_data_array(mtgp32, opt.group_num, seed_array, 5);
+    init_check_data_array(&mtgp32, seed_array, 5);
     initialize_by_array(opt, status_buffer, opt.group_num,
 			seed_array, 5);
-    for (int i = 0; i < 2; i++) {
-	generate_single(opt.group_num, status_buffer, opt.data_count);
+    data_count = opt.data_count;
+    while (data_count > 0) {
+	generate_single(opt.group_num, status_buffer, data_unit);
+	status_jump(opt, status_buffer, opt.group_num);
+	data_count -= data_unit;
     }
-    free_check_data(mtgp32, opt.group_num);
+    free_check_data(&mtgp32);
     return 0;
 }
 
 int main(int argc, char * argv[]) {
     try {
 	return test(argc, argv);
-    } catch (Error e) {
+    } catch (cl::Error e) {
 	cerr << "Error Code:" << e.err() << endl;
+	cerr << errorMessage << endl;
 	cerr << e.what() << endl;
     }
 }

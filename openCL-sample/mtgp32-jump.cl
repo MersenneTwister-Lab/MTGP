@@ -412,10 +412,8 @@ static inline void mtgp32_table_jump(int gid,
  * @param[in] jump_poly jump polynomial
  */
 __kernel void mtgp32_jump_kernel(__global uint * d_status,
-				 __global uint jump_poly[],
-				 int count)
+				 __global uint * jump_poly)
 {
-
     __local uint work[MTGP32_N];
     __local uint status[MTGP32_N];
 
@@ -423,95 +421,29 @@ __kernel void mtgp32_jump_kernel(__global uint * d_status,
     const int lid = get_local_id(0);
     const int local_size = get_local_size(0);
 
-    // copy status data from global memory to shared memory.
+    // copy status data from global memory to local memory.
     status[lid] = d_status[gid * MTGP32_N + lid];
     if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
 	status[MTGP32_TN + lid] = d_status[gid * MTGP32_N + MTGP32_TN + lid];
     }
-
     barrier(CLK_LOCAL_MEM_FENCE);
+
     // jump
-    for (int i = 0; i < count; i++) {
-	mtgp32_jump(gid, lid, work, status, jump_poly);
-	barrier(CLK_LOCAL_MEM_FENCE);
-	status[lid] = work[lid];
-	if (local_size < MTGP32_N) {
-	    if (lid < MTGP32_N - MTGP32_TN) {
-		status[MTGP32_TN + lid] ^= work[MTGP32_TN + lid];
-	    }
+    mtgp32_jump(gid, lid, work, status, jump_poly);
+    barrier(CLK_LOCAL_MEM_FENCE);
+    status[lid] = work[lid];
+    if (local_size < MTGP32_N) {
+	if (lid < MTGP32_N - MTGP32_TN) {
+	    status[MTGP32_TN + lid] = work[MTGP32_TN + lid];
 	}
-	barrier(CLK_LOCAL_MEM_FENCE);
     }
     barrier(CLK_LOCAL_MEM_FENCE);
+
+    // copy status data from local memory to global memory
     d_status[gid * MTGP32_N + lid] = status[lid];
     if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
-	d_status[gid * MTGP32_N + MTGP32_TN + lid]
-	    = status[MTGP32_TN + lid];
+	d_status[gid * MTGP32_N + MTGP32_TN + lid] = status[MTGP32_TN + lid];
     }
-}
-
-/**
- * kernel function.
- * This function changes internal state of MTGP to jumped state.
- * threads per block should be MTGP32_N.
- *
- * @param[in,out] d_status kernel I/O data
- */
-__kernel void mtgp32_jump_long_seed_kernel(__global uint * d_status,
-					   uint seed,
-					   __global uint * jump_table)
-{
-    __local uint work[MTGP32_N];
-    __local uint status[MTGP32_N];
-
-    const int gid = get_group_id(0);
-    const int lid = get_local_id(0);
-    const int local_size = get_local_size(0);
-
-    // initialize
-    mtgp32_init_state(status, seed);
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // jump
-    mtgp32_table_jump(gid, lid, jump_table, work, status);
-    d_status[gid * MTGP32_N + lid] = status[lid];
-    if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
-	d_status[gid * MTGP32_N + MTGP32_TN + lid]
-	    = status[MTGP32_TN + lid];
-    }
-    barrier(CLK_GLOBAL_MEM_FENCE);
-}
-
-/**
- * kernel function.
- * This function changes internal state of MTGP to jumped state.
- * threads per block should be MTGP32_N.
- *
- * @param[in,out] d_status kernel I/O data
- */
-__kernel void mtgp32_jump_long_array_kernel(__global uint * d_status,
-					    __global uint * seed_array,
-					    int length,
-					    __global uint * jump_table)
-{
-    __local uint work[MTGP32_N];
-    __local uint status[MTGP32_N];
-    const int gid = get_group_id(0);
-    const int lid = get_local_id(0);
-    const int local_size = get_local_size(0);
-
-    // initialize
-    mtgp32_init_by_array(status, seed_array, length);
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // jump
-    mtgp32_table_jump(gid, lid, jump_table, work, status);
-    d_status[gid * MTGP32_N + lid] = status[lid];
-    if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
-	d_status[gid * MTGP32_N + MTGP32_TN + lid]
-	    = status[MTGP32_TN + lid];
-    }
-    barrier(CLK_GLOBAL_MEM_FENCE);
 }
 
 /**
@@ -522,11 +454,12 @@ __kernel void mtgp32_jump_long_array_kernel(__global uint * d_status,
  * @param[in,out] d_status kernel I/O data
  */
 __kernel void mtgp32_jump_seed_kernel(__global uint * d_status,
-				      __global uint jump_table[],
-				      uint seed)
+				      uint seed,
+				      __global uint * jump_table)
 {
     __local uint work[MTGP32_N];
     __local uint status[MTGP32_N];
+
     const int gid = get_group_id(0);
     const int lid = get_local_id(0);
     const int local_size = get_local_size(0);
@@ -552,12 +485,13 @@ __kernel void mtgp32_jump_seed_kernel(__global uint * d_status,
  * @param[in,out] d_status kernel I/O data
  */
 __kernel void mtgp32_jump_array_kernel(__global uint * d_status,
-				       __global uint jump_table[],
 				       __global uint * seed_array,
-				       int length)
+				       int length,
+				       __global uint * jump_table)
 {
     __local uint work[MTGP32_N];
     __local uint status[MTGP32_N];
+
     const int gid = get_group_id(0);
     const int lid = get_local_id(0);
     const int local_size = get_local_size(0);
