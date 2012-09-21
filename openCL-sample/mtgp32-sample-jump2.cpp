@@ -9,25 +9,11 @@
  *   3.1 generate sub-sequences parallel
  *   3.2 jump for next loop
  */
-#define CL_USE_DEPRECATED_OPENCL_1_1_APIS
-#define __CL_ENABLE_EXCEPTIONS
 
-#if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
-#include <OpenCL/cl.hpp>
-#else
-#include <CL/cl.hpp>
-#endif
-
-//#include <exception>
+#include "opencl_tools.hpp"
 #include <cstddef>
 #include <cfloat>
 #include <ctime>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <vector>
-#include <map>
-#include <string>
 #include <NTL/GF2X.h>
 #include <NTL/ZZ.h>
 
@@ -45,14 +31,14 @@ using namespace NTL;
 /* ================== */
 /* OpenCL information */
 /* ================== */
-static std::vector<cl::Platform> platforms;
-static std::vector<cl::Device> devices;
-static cl::Context context;
-static std::string programBuffer;
-static cl::Program program;
-static cl::Program::Sources source;
-static cl::CommandQueue queue;
-static std::string errorMessage;
+std::vector<cl::Platform> platforms;
+std::vector<cl::Device> devices;
+cl::Context context;
+std::string programBuffer;
+cl::Program program;
+cl::Program::Sources source;
+cl::CommandQueue queue;
+std::string errorMessage;
 
 /* ========================= */
 /* Sample global variables
@@ -70,224 +56,6 @@ static const int jump_step = MTGP32_LS * 10;
 static ZZ jump;
 static uint32_t jump_poly[MTGP32_N];
 static uint32_t jump_initial[MTGP32_N * MAX_JUMP_TABLE];
-
-/* ========================= */
-/* OpenCL interface function */
-/* ========================= */
-static void getPlatforms()
-{
-#if defined(DEBUG)
-    cout << "start get platform" << endl;
-#endif
-    errorMessage = "getPlatform failed";
-    cl_int err = Platform::get(&platforms);
-    if(err != CL_SUCCESS)
-    {
-        cout << "getPlatform failed" << err << endl;
-	return;
-    }
-#if defined(DEBUG)
-    cout << "vendor:" << endl;
-    for (int i = 0; i < platforms.size(); i++) {
-	cout << platforms[i].getInfo<CL_PLATFORM_VENDOR>() << endl;
-    }
-#endif
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get platform" << endl;
-#endif
-}
-
-static void getDevices()
-{
-#if defined(DEBUG)
-    cout << "start get devices" << endl;
-#endif
-    cl_int err;
-    errorMessage = "getDevices failed";
-    err = platforms[0].getDevices(CL_DEVICE_TYPE_GPU, &devices);
-    if(err != CL_SUCCESS)
-    {
-        cout << "getDevices failed err:" << err << endl;
-	return;
-    }
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get devices" << endl;
-#endif
-}
-
-static void getContext()
-{
-#if defined(DEBUG)
-    cout << "start get context" << endl;
-#endif
-    errorMessage = "create context failed";
-    Context local_context(devices);
-    context = local_context;
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get context" << endl;
-#endif
-}
-
-static void readFile(const char * filename)
-{
-#if defined(DEBUG)
-    cout << "start read file" << endl;
-#endif
-    ifstream ifs;
-    errorMessage = "read file failed";
-    ifs.open(filename, fstream::in | fstream::binary);
-    if (ifs) {
-        ifs.seekg(0, std::fstream::end);
-        ::size_t size = (::size_t)ifs.tellg();
-        ifs.seekg(0, std::fstream::beg);
-	char * buf = new char[size + 1];
-	ifs.read(buf, size);
-        ifs.close();
-        buf[size] = '\0';
-	programBuffer = buf;
-	delete[] buf;
-    }
-#if defined(DEBUG) && 0
-    cout << "source:" << endl;
-    cout << programBuffer << endl;
-#endif
-    errorMessage = "create sources failed";
-    cl::Program::Sources local_source(1,
-				      make_pair(programBuffer.c_str(),
-						programBuffer.size()));
-    source = local_source;
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end read file" << endl;
-#endif
-}
-
-static void getProgram()
-{
-#if defined(DEBUG)
-    cout << "start get program" << endl;
-#endif
-    cl_int err;
-    errorMessage = "create program failed";
-    Program local_program = Program(context, source, &err);
-    if (err != CL_SUCCESS) {
-	cout << "get program err:" << err << endl;
-	return;
-    }
-#if defined(DEBUG)
-    cout << "start build" << endl;
-#endif
-    const char * option = "";
-    errorMessage = "program build failed";
-    try {
-	err = local_program.build(devices, option);
-    } catch (cl::Error e) {
-	if (e.err() != CL_SUCCESS) {
-	    if (e.err() == CL_BUILD_PROGRAM_FAILURE) {
-		std::string str
-		    = local_program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
-		cout << "compile error:" << endl;
-		cout << str << endl;
-	    } else {
-		cout << "build error but not program failure err:"
-		     << dec << e.err()
-		     << " " << e.what() << endl;
-	    }
-	}
-	throw e;
-    }
-    program = local_program;
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get program" << endl;
-#endif
-}
-
-static void getCommandQueue()
-{
-#if defined(DEBUG)
-    cout << "start get command queue" << endl;
-#endif
-    cl_int err;
-    errorMessage = "create command queue failed";
-    CommandQueue local_queue(context,
-			     devices[0],
-			     CL_QUEUE_PROFILING_ENABLE,
-			     &err);
-    if (err != CL_SUCCESS) {
-	cout << "command queue create failure err:"
-	     << dec << err << endl;
-	return;
-    }
-    queue = local_queue;
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get command queue" << endl;
-#endif
-}
-
-static int getMaxGroupSize()
-{
-#if defined(DEBUG)
-    cout << "start get max group size" << endl;
-#endif
-    ::size_t size;
-    cl_int err;
-    errorMessage = "device getinfo(CL_DEVICE_MAX_WORK_GROUP_SIZE) failed";
-    err = devices[0].getInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE, &size);
-    if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_MAX_WORK_GROUP_SIZE) err:"
-	     << dec << err << endl;
-    }
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get max group size" << endl;
-#endif
-    return size;
-}
-
-static cl_ulong getLocalMemSize()
-{
-#if defined(DEBUG)
-    cout << "start get local mem size" << endl;
-#endif
-    cl_int err;
-    cl_ulong size;
-    errorMessage = "device getinfo(CL_DEVICE_LOCAL_MEM_SIZE) failed";
-    err = devices[0].getInfo(CL_DEVICE_LOCAL_MEM_SIZE, &size);
-    if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_LOCAL_MEM_SIZE) err:"
-	     << dec << err << endl;
-    }
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get local mem size" << endl;
-#endif
-    return size;
-}
-
-static int getMaxWorkItemSize(int dim)
-{
-#if defined(DEBUG)
-    cout << "start get max work item size" << endl;
-#endif
-    std::vector<std::size_t> vec;
-    cl_int err;
-    errorMessage = "device getinfo(CL_DEVICE_MAX_WORK_ITEM_SIZE) failed";
-    err = devices[0].getInfo(CL_DEVICE_MAX_WORK_ITEM_SIZES, &vec);
-    if (err != CL_SUCCESS) {
-	cout << "device getinfo(CL_DEVICE_MAX_WORK_ITEM_SIZES) err:"
-	     << dec << err << endl;
-    }
-    errorMessage = "";
-#if defined(DEBUG)
-    cout << "end get max work item size :" << dec << vec[dim] << endl;
-#endif
-    return vec[dim];
-}
 
 
 /* ========================= */
@@ -457,15 +225,6 @@ static void check_single(float * h_data, int num_data)
     cout << "check_single end" << endl;
 #endif
 }
-
-double get_time(Event& event)
-{
-    event.wait();
-    cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-    cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
-    return (end - start) * 1.0e-9;
-}
-
 void initialize_by_seed(options& opt,
 			Buffer& status_buffer,
 			int group,
@@ -790,16 +549,16 @@ int test(int argc, char * argv[]) {
 #if defined(DEBUG)
     cout << "openCL setup start" << endl;
 #endif
-    getPlatforms();
-    getDevices();
-    getContext();
+    platforms = getPlatforms();
+    devices = getDevices();
+    context = getContext();
 #if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
-    readFile("mtgp32-jump.cli");
+    source = getSource("mtgp32-jump.cli");
 #else
-    readFile("mtgp32-jump.cl");
+    source = getSource("mtgp32-jump.cl");
 #endif
-    getProgram();
-    getCommandQueue();
+    program = getProgram();
+    queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
 #endif

@@ -5,21 +5,13 @@
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 #define __CL_ENABLE_EXCEPTIONS
 
-#if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
-#include <OpenCL/cl.hpp>
-#else
-#include <CL/cl.hpp>
-#endif
+#include "opencl_tools.hpp"
 
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <fstream>
-#include <vector>
-#include <map>
 #include <string>
-#include <memory.h>
 
 typedef uint32_t uint;
 #include "mtgp32-fast-jump.h"
@@ -36,18 +28,20 @@ using namespace cl;
 /* ================== */
 //typedef pair<const char*, ::size_t> Lines;
 //typedef std::vector<Lines> Sources;
-static std::vector<cl::Platform> platforms;
-static std::vector<cl::Device> devices;
-static cl::Context context;
-static std::string programBuffer;
-static cl::Program program;
-static cl::Program::Sources source;
-static cl::CommandQueue queue;
+std::vector<cl::Platform> platforms;
+std::vector<cl::Device> devices;
+cl::Context context;
+std::string programBuffer;
+cl::Program program;
+cl::Program::Sources source;
+cl::CommandQueue queue;
+std::string errorMessage;
 
 #define MAX_BLOCK_NUM 20
 static mtgp32_fast_t mtgp32[MAX_BLOCK_NUM];
 static bool thread_max = false;
 
+#if 0
 /* ========================= */
 /* OpenCL interface function */
 /* ========================= */
@@ -247,6 +241,15 @@ static int getMaxWorkItemSize(int dim)
 }
 
 
+double get_time(Event& event)
+{
+    event.wait();
+    cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+    return (end - start) * 1.0e-9;
+}
+
+#endif
 /* ========================= */
 /* mtgp32 sample code        */
 /* ========================= */
@@ -411,14 +414,6 @@ static void check_status(uint * h_status,
 #if defined(DEBUG)
     cout << "check_status end" << endl;
 #endif
-}
-
-double get_time(Event& event)
-{
-    event.wait();
-    cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-    cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
-    return (end - start) * 1.0e-9;
 }
 
 void initialize_by_seed(options& opt,
@@ -648,7 +643,7 @@ void generate_uint32(int group_num,
 }
 
 void generate_single(int group_num,
-		     Buffer& tiny_buffer,
+		     Buffer& status_buffer,
 		     int data_size)
 {
     int item_num = MTGP32_TN * group_num;
@@ -660,7 +655,7 @@ void generate_single(int group_num,
     Buffer output_buffer(context,
 			 CL_MEM_READ_WRITE,
 			 data_size * sizeof(float));
-    single_kernel.setArg(0, tiny_buffer);
+    single_kernel.setArg(0, status_buffer);
     single_kernel.setArg(1, output_buffer);
     single_kernel.setArg(2, data_size / group_num);
     NDRange global(item_num);
@@ -697,16 +692,16 @@ int test(int argc, char * argv[]) {
 #if defined(DEBUG)
     cout << "openCL setup start" << endl;
 #endif
-    getPlatforms();
-    getDevices();
-    getContext();
+    platforms = getPlatforms();
+    devices = getDevices();
+    context = getContext();
 #if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
-    readFile("mtgp32-jump.cli");
+    source = getSource("mtgp32-jump.cli");
 #else
-    readFile("mtgp32-jump.cl");
+    source = getSource("mtgp32-jump.cl");
 #endif
-    getProgram();
-    getCommandQueue();
+    program = getProgram();
+    queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
 #endif
@@ -730,7 +725,7 @@ int test(int argc, char * argv[]) {
     }
     int local_mem_size = getLocalMemSize();
     if (local_mem_size < sizeof(uint32_t) * MTGP32_N * 2) {
-	cout << "local memory size not efficient:"
+	cout << "local memory size not sufficient:"
 	     << dec << local_mem_size << endl;
 	return -1;
     }

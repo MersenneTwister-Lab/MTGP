@@ -1,7 +1,7 @@
 DEBUG = -DDEBUG -ggdb
 
 # Linux
-#CC = g++ -I../ ${DEBUG} ${openclinc} ${opencllib}  -lOpenCL
+#CC = g++ -I../ ${DEBUG} -lOpenCL
 # OSX 10.6
 CC = g++ -framework opencl -I../ ${DEBUG}
 
@@ -12,6 +12,18 @@ LIBGF2X = -lgf2x
 LINKOPT = -lntl ${LIBGF2X} ${LIBGMP}
 
 .SUFFIXES:      .cl .clh .cli
+
+mtgp32-sample: mtgp32-sample.cpp \
+	mtgp32.cl \
+	mtgp32.cli \
+	../mtgp32-fast.h \
+	parse_opt.o \
+	../mtgp32-fast.o \
+	../mtgp32-param-fast.o
+	${CC} -o $@ mtgp32-sample.cpp \
+	parse_opt.o \
+	../mtgp32-fast.o \
+	../mtgp32-param-fast.o
 
 mtgp32-sample-jump1: mtgp32-sample-jump1.cpp ../mtgp32-fast-jump.h \
 	mtgp32-jump-table.o ../mtgp32-fast.h mtgp32-jump.cl \
