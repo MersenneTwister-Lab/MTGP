@@ -2,7 +2,7 @@
  * @file mtgp32.cl
  *
  * @brief MTGP Sample Program for openCL 1.1
- *
+ * 1 parameter for 1 generator
  */
 
 /*
@@ -17,6 +17,9 @@
 #define MTGP32_LS (MTGP32_TN * 3)
 #define MTGP32_TS 16
 
+/* =========================
+   declarations
+   ========================= */
 struct MTGP32_T {
     __local uint * status;
     __constant uint * param_tbl;
@@ -31,6 +34,371 @@ typedef struct MTGP32_T mtgp32_t;
 __constant uint mtgp32_mask = 0xfff80000;
 __constant uint mtgp32_non_zero = 0x4d544750;
 
+static inline uint para_rec(mtgp32_t * mtgp, uint X1, uint X2, uint Y);
+static inline uint temper(mtgp32_t * mtgp, uint V, uint T);
+static inline uint temper_single(mtgp32_t * mtgp, uint V, uint T);
+static inline void status_read(__local uint  * status,
+			       __global uint * d_status,
+			       int gid,
+			       int lid);
+static inline void status_write(__global uint * d_status,
+				__local uint * status,
+				int gid,
+				int lid);
+static inline uint mtgp32_ini_func1(uint x);
+static inline uint mtgp32_ini_func2(uint x);
+static inline void mtgp32_init_state(mtgp32_t * mtgp, uint seed);
+static inline void mtgp32_init_by_array(mtgp32_t * mtgp,
+					__global uint *seed_array,
+					int length);
+/* ================================ */
+/* mtgp32 sample kernel code        */
+/* ================================ */
+/**
+ * This function sets up initial state by seed.
+ * kernel function.
+ *
+ * @param[in] param_tbl recursion parameters
+ * @param[in] temper_tbl tempering parameters
+ * @param[in] single_temper_tbl tempering parameters for float
+ * @param[in] pos_tbl pic-up positions
+ * @param[in] sh1_tbl shift parameters
+ * @param[in] sh2_tbl shift parameters
+ * @param[out] d_status kernel I/O data
+ * @param[in] seed initializing seed
+ */
+__kernel void mtgp32_init_seed_kernel(
+    __constant uint * param_tbl,
+    __constant uint * temper_tbl,
+    __constant uint * single_temper_tbl,
+    __constant uint * pos_tbl,
+    __constant uint * sh1_tbl,
+    __constant uint * sh2_tbl,
+    __global uint * d_status,
+    uint seed)
+{
+    const int gid = get_group_id(0);
+    const int lid = get_local_id(0);
+    const int local_size = get_local_size(0);
+    __local uint status[MTGP32_N];
+    mtgp32_t mtgp;
+    mtgp.status = status;
+    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
+    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
+    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
+    mtgp.pos = pos_tbl[gid];
+    mtgp.sh1 = sh1_tbl[gid];
+    mtgp.sh2 = sh2_tbl[gid];
+
+    // initialize
+    mtgp32_init_state(&mtgp, seed + gid);
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    d_status[gid * MTGP32_N + lid] = status[lid];
+    if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
+	d_status[gid * MTGP32_N + MTGP32_TN + lid] = status[MTGP32_TN + lid];
+    }
+}
+
+/**
+ * This function sets up initial state by seed.
+ * kernel function.
+ *
+ * @param[in] param_tbl recursion parameters
+ * @param[in] temper_tbl tempering parameters
+ * @param[in] single_temper_tbl tempering parameters for float
+ * @param[in] pos_tbl pic-up positions
+ * @param[in] sh1_tbl shift parameters
+ * @param[in] sh2_tbl shift parameters
+ * @param[out] d_status kernel I/O data
+ * @param[in] seed_array initializing seeds
+ * @param[in] length length of seed_array
+ */
+__kernel void mtgp32_init_array_kernel(
+    __constant uint * param_tbl,
+    __constant uint * temper_tbl,
+    __constant uint * single_temper_tbl,
+    __constant uint * pos_tbl,
+    __constant uint * sh1_tbl,
+    __constant uint * sh2_tbl,
+    __global uint * d_status,
+    __global uint * seed_array,
+    int length)
+{
+    const int gid = get_group_id(0);
+    const int lid = get_local_id(0);
+    const int local_size = get_local_size(0);
+    __local uint status[MTGP32_N];
+    mtgp32_t mtgp;
+    mtgp.status = status;
+    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
+    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
+    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
+    mtgp.pos = pos_tbl[gid];
+    mtgp.sh1 = sh1_tbl[gid];
+    mtgp.sh2 = sh2_tbl[gid];
+
+    // initialize
+    mtgp32_init_by_array(&mtgp, seed_array, length);
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    d_status[gid * MTGP32_N + lid] = status[lid];
+    if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
+	d_status[gid * MTGP32_N + MTGP32_TN + lid] = status[MTGP32_TN + lid];
+    }
+}
+
+/**
+ * kernel function.
+ * This function generates 32-bit unsigned integers in d_data
+ *
+ * @param[in] param_tbl recursion parameters
+ * @param[in] temper_tbl tempering parameters
+ * @param[in] single_temper_tbl tempering parameters for float
+ * @param[in] pos_tbl pic-up positions
+ * @param[in] sh1_tbl shift parameters
+ * @param[in] sh2_tbl shift parameters
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output
+ * @param[in] size number of output data requested.
+ */
+__kernel void mtgp32_uint32_kernel(
+    __constant uint * param_tbl,
+    __constant uint * temper_tbl,
+    __constant uint * single_temper_tbl,
+    __constant uint * pos_tbl,
+    __constant uint * sh1_tbl,
+    __constant uint * sh2_tbl,
+    __global uint * d_status,
+    __global uint * d_data,
+    int size)
+{
+    const int gid = get_group_id(0);
+    const int lid = get_local_id(0);
+    __local uint status[MTGP32_LS];
+    mtgp32_t mtgp;
+    uint r;
+    uint o;
+
+    mtgp.status = status;
+    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
+    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
+    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
+    mtgp.pos = pos_tbl[gid];
+    mtgp.sh1 = sh1_tbl[gid];
+    mtgp.sh2 = sh2_tbl[gid];
+
+    int pos = mtgp.pos;
+
+    // copy status data from global memory to shared memory.
+    status_read(status, d_status, gid, lid);
+
+    // main loop
+    for (int i = 0; i < size; i += MTGP32_LS) {
+	r = para_rec(&mtgp,
+		     status[MTGP32_LS - MTGP32_N + lid],
+		     status[MTGP32_LS - MTGP32_N + lid + 1],
+		     status[MTGP32_LS - MTGP32_N + lid + pos]);
+	status[lid] = r;
+	o = temper(&mtgp, r, status[MTGP32_LS - MTGP32_N + lid + pos - 1]);
+	d_data[size * gid + i + lid] = o;
+	barrier(CLK_LOCAL_MEM_FENCE);
+	r = para_rec(&mtgp,
+		     status[(4 * MTGP32_TN - MTGP32_N + lid) % MTGP32_LS],
+		     status[(4 * MTGP32_TN - MTGP32_N + lid + 1) % MTGP32_LS],
+		     status[(4 * MTGP32_TN - MTGP32_N + lid + pos)
+			    % MTGP32_LS]);
+	status[lid + MTGP32_TN] = r;
+	o = temper(&mtgp,
+		   r,
+		   status[(4 * MTGP32_TN - MTGP32_N + lid + pos - 1)
+			  % MTGP32_LS]);
+	d_data[size * gid + MTGP32_TN + i + lid] = o;
+	barrier(CLK_LOCAL_MEM_FENCE);
+	r = para_rec(&mtgp,
+		     status[2 * MTGP32_TN - MTGP32_N + lid],
+		     status[2 * MTGP32_TN - MTGP32_N + lid + 1],
+		     status[2 * MTGP32_TN - MTGP32_N + lid + pos]);
+	status[lid + 2 * MTGP32_TN] = r;
+	o = temper(&mtgp, r, status[lid + pos - 1 + 2 * MTGP32_TN - MTGP32_N]);
+	d_data[size * gid + 2 * MTGP32_TN + i + lid] = o;
+	barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    // write back status for next call
+    status_write(d_status, status, gid, lid);
+}
+
+/**
+ * This kernel function generates single precision floating point numbers
+ * in the range [1, 2) in d_data.
+ *
+ * @param[in] param_tbl recursion parameters
+ * @param[in] temper_tbl tempering parameters
+ * @param[in] single_temper_tbl tempering parameters for float
+ * @param[in] pos_tbl pic-up positions
+ * @param[in] sh1_tbl shift parameters
+ * @param[in] sh2_tbl shift parameters
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output. IEEE single precision format.
+ * @param[in] size number of output data requested.
+ */
+__kernel void mtgp32_single12_kernel(
+    __constant uint * param_tbl,
+    __constant uint * temper_tbl,
+    __constant uint * single_temper_tbl,
+    __constant uint * pos_tbl,
+    __constant uint * sh1_tbl,
+    __constant uint * sh2_tbl,
+    __global uint * d_status,
+    __global uint* d_data,
+    int size)
+{
+    const int gid = get_group_id(0);
+    const int lid = get_local_id(0);
+    __local uint status[MTGP32_LS];
+    mtgp32_t mtgp;
+    uint r;
+    uint o;
+
+    mtgp.status = status;
+    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
+    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
+    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
+    mtgp.pos = pos_tbl[gid];
+    mtgp.sh1 = sh1_tbl[gid];
+    mtgp.sh2 = sh2_tbl[gid];
+
+    int pos = mtgp.pos;
+
+    // copy status data from global memory to shared memory.
+    status_read(status, d_status, gid, lid);
+
+    // main loop
+    for (int i = 0; i < size; i += MTGP32_LS) {
+	r = para_rec(&mtgp,
+		     status[MTGP32_LS - MTGP32_N + lid],
+		     status[MTGP32_LS - MTGP32_N + lid + 1],
+		     status[MTGP32_LS - MTGP32_N + lid + pos]);
+	status[lid] = r;
+	o = temper_single(&mtgp,
+			  r,
+			  status[MTGP32_LS - MTGP32_N + lid + pos - 1]);
+	d_data[size * gid + i + lid] = o;
+	barrier(CLK_LOCAL_MEM_FENCE);
+	r = para_rec(&mtgp,
+		     status[(4 * MTGP32_TN - MTGP32_N + lid) % MTGP32_LS],
+		     status[(4 * MTGP32_TN - MTGP32_N + lid + 1) % MTGP32_LS],
+		     status[(4 * MTGP32_TN - MTGP32_N + lid + pos)
+			    % MTGP32_LS]);
+	status[lid + MTGP32_TN] = r;
+	o = temper_single(
+	    &mtgp,
+	    r,
+	    status[(4 * MTGP32_TN - MTGP32_N + lid + pos - 1) % MTGP32_LS]);
+	d_data[size * gid + MTGP32_TN + i + lid] = o;
+	barrier(CLK_LOCAL_MEM_FENCE);
+	r = para_rec(&mtgp,
+		     status[2 * MTGP32_TN - MTGP32_N + lid],
+		     status[2 * MTGP32_TN - MTGP32_N + lid + 1],
+		     status[2 * MTGP32_TN - MTGP32_N + lid + pos]);
+	status[lid + 2 * MTGP32_TN] = r;
+	o = temper_single(&mtgp,
+			  r,
+			  status[lid + pos - 1 + 2 * MTGP32_TN - MTGP32_N]);
+	d_data[size * gid + 2 * MTGP32_TN + i + lid] = o;
+	barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    // write back status for next call
+    status_write(d_status, status, gid, lid);
+}
+
+/**
+ * This kernel function generates single precision floating point numbers
+ * in the range [0, 1) in d_data.
+ *
+ * @param[in] param_tbl recursion parameters
+ * @param[in] temper_tbl tempering parameters
+ * @param[in] single_temper_tbl tempering parameters for float
+ * @param[in] pos_tbl pic-up positions
+ * @param[in] sh1_tbl shift parameters
+ * @param[in] sh2_tbl shift parameters
+ * @param[in,out] d_status kernel I/O data
+ * @param[out] d_data output. IEEE single precision format.
+ * @param[in] size number of output data requested.
+ */
+__kernel void mtgp32_single01_kernel(
+    __constant uint * param_tbl,
+    __constant uint * temper_tbl,
+    __constant uint * single_temper_tbl,
+    __constant uint * pos_tbl,
+    __constant uint * sh1_tbl,
+    __constant uint * sh2_tbl,
+    __global uint * d_status,
+    __global float* d_data,
+    int size)
+{
+    const int gid = get_group_id(0);
+    const int lid = get_local_id(0);
+    __local uint status[MTGP32_LS];
+    mtgp32_t mtgp;
+    uint r;
+    uint o;
+
+    mtgp.status = status;
+    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
+    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
+    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
+    mtgp.pos = pos_tbl[gid];
+    mtgp.sh1 = sh1_tbl[gid];
+    mtgp.sh2 = sh2_tbl[gid];
+
+    int pos = mtgp.pos;
+
+    // copy status data from global memory to shared memory.
+    status_read(status, d_status, gid, lid);
+
+    // main loop
+    for (int i = 0; i < size; i += MTGP32_LS) {
+	r = para_rec(&mtgp,
+		     status[MTGP32_LS - MTGP32_N + lid],
+		     status[MTGP32_LS - MTGP32_N + lid + 1],
+		     status[MTGP32_LS - MTGP32_N + lid + pos]);
+	status[lid] = r;
+	o = temper_single(&mtgp,
+			  r,
+			  status[MTGP32_LS - MTGP32_N + lid + pos - 1]);
+	d_data[size * gid + i + lid] = as_float(o) - 1.0f;
+	barrier(CLK_LOCAL_MEM_FENCE);
+	r = para_rec(&mtgp,
+		     status[(4 * MTGP32_TN - MTGP32_N + lid) % MTGP32_LS],
+		     status[(4 * MTGP32_TN - MTGP32_N + lid + 1) % MTGP32_LS],
+		     status[(4 * MTGP32_TN - MTGP32_N + lid + pos)
+			    % MTGP32_LS]);
+	status[lid + MTGP32_TN] = r;
+	o = temper_single(
+	    &mtgp,
+	    r,
+	    status[(4 * MTGP32_TN - MTGP32_N + lid + pos - 1) % MTGP32_LS]);
+	d_data[size * gid + MTGP32_TN + i + lid] = as_float(o) - 1.0f;
+	barrier(CLK_LOCAL_MEM_FENCE);
+	r = para_rec(&mtgp,
+		     status[2 * MTGP32_TN - MTGP32_N + lid],
+		     status[2 * MTGP32_TN - MTGP32_N + lid + 1],
+		     status[2 * MTGP32_TN - MTGP32_N + lid + pos]);
+	status[lid + 2 * MTGP32_TN] = r;
+	o = temper_single(&mtgp,
+			  r,
+			  status[lid + pos - 1 + 2 * MTGP32_TN - MTGP32_N]);
+	d_data[size * gid + 2 * MTGP32_TN + i + lid] = as_float(o) - 1.0f;
+	barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    // write back status for next call
+    status_write(d_status, status, gid, lid);
+}
+
+/* ================================ */
+/* mtgp32 sample device function    */
+/* ================================ */
 /**
  * The function of the recursion formula calculation.
  *
@@ -127,7 +495,7 @@ static inline void status_write(__global uint * d_status,
 				__local uint * status,
 				int gid,
 				int lid)
- {
+{
     d_status[gid * MTGP32_N + lid]
 	= status[MTGP32_LS - MTGP32_N + lid];
     if (lid < MTGP32_N - MTGP32_TN) {
@@ -300,238 +668,5 @@ static inline void mtgp32_init_by_array(mtgp32_t * mtgp,
     if (status[size - 1] == 0) {
 	status[size - 1] = mtgp32_non_zero;
     }
-}
-
-/**
- * kernel function.
- * This function changes internal state of MTGP to jumped state.
- * threads per block should be MTGP32_N.
- *
- * @param[in,out] d_status kernel I/O data
- */
-__kernel void mtgp32_init_seed_kernel(
-    __constant uint * param_tbl,
-    __constant uint * temper_tbl,
-    __constant uint * single_temper_tbl,
-    __constant uint * pos_tbl,
-    __constant uint * sh1_tbl,
-    __constant uint * sh2_tbl,
-    __global uint * d_status,
-    uint seed)
-{
-    const int gid = get_group_id(0);
-    const int lid = get_local_id(0);
-    const int local_size = get_local_size(0);
-    __local uint status[MTGP32_N];
-    mtgp32_t mtgp;
-    mtgp.status = status;
-    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
-    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
-    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
-    mtgp.pos = pos_tbl[gid];
-    mtgp.sh1 = sh1_tbl[gid];
-    mtgp.sh2 = sh2_tbl[gid];
-
-    // initialize
-    mtgp32_init_state(&mtgp, seed + gid);
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    d_status[gid * MTGP32_N + lid] = status[lid];
-    if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
-	d_status[gid * MTGP32_N + MTGP32_TN + lid] = status[MTGP32_TN + lid];
-    }
-}
-
-/**
- * kernel function.
- * This function changes internal state of MTGP to jumped state.
- * threads per block should be MTGP32_N.
- *
- * @param[in,out] d_status kernel I/O data
- */
-__kernel void mtgp32_init_array_kernel(
-    __constant uint * param_tbl,
-    __constant uint * temper_tbl,
-    __constant uint * single_temper_tbl,
-    __constant uint * pos_tbl,
-    __constant uint * sh1_tbl,
-    __constant uint * sh2_tbl,
-    __global uint * d_status,
-    __global uint * seed_array,
-    int length)
-{
-    const int gid = get_group_id(0);
-    const int lid = get_local_id(0);
-    const int local_size = get_local_size(0);
-    __local uint status[MTGP32_N];
-    mtgp32_t mtgp;
-    mtgp.status = status;
-    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
-    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
-    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
-    mtgp.pos = pos_tbl[gid];
-    mtgp.sh1 = sh1_tbl[gid];
-    mtgp.sh2 = sh2_tbl[gid];
-
-    // initialize
-    mtgp32_init_by_array(&mtgp, seed_array, length);
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    d_status[gid * MTGP32_N + lid] = status[lid];
-    if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
-	d_status[gid * MTGP32_N + MTGP32_TN + lid] = status[MTGP32_TN + lid];
-    }
-}
-
-/**
- * kernel function.
- * This function generates 32-bit unsigned integers in d_data
- *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output
- * @param[in] size number of output data requested.
- */
-__kernel void mtgp32_uint32_kernel(
-    __constant uint * param_tbl,
-    __constant uint * temper_tbl,
-    __constant uint * single_temper_tbl,
-    __constant uint * pos_tbl,
-    __constant uint * sh1_tbl,
-    __constant uint * sh2_tbl,
-    __global uint * d_status,
-    __global uint * d_data,
-    int size)
-{
-    const int gid = get_group_id(0);
-    const int lid = get_local_id(0);
-    __local uint status[MTGP32_LS];
-    mtgp32_t mtgp;
-    uint r;
-    uint o;
-
-    mtgp.status = status;
-    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
-    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
-    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
-    mtgp.pos = pos_tbl[gid];
-    mtgp.sh1 = sh1_tbl[gid];
-    mtgp.sh2 = sh2_tbl[gid];
-
-    int pos = mtgp.pos;
-
-    // copy status data from global memory to shared memory.
-    status_read(status, d_status, gid, lid);
-
-    // main loop
-    for (int i = 0; i < size; i += MTGP32_LS) {
-	r = para_rec(&mtgp,
-		     status[MTGP32_LS - MTGP32_N + lid],
-		     status[MTGP32_LS - MTGP32_N + lid + 1],
-		     status[MTGP32_LS - MTGP32_N + lid + pos]);
-	status[lid] = r;
-	o = temper(&mtgp, r, status[MTGP32_LS - MTGP32_N + lid + pos - 1]);
-	d_data[size * gid + i + lid] = o;
-	barrier(CLK_LOCAL_MEM_FENCE);
-	r = para_rec(&mtgp,
-		     status[(4 * MTGP32_TN - MTGP32_N + lid) % MTGP32_LS],
-		     status[(4 * MTGP32_TN - MTGP32_N + lid + 1) % MTGP32_LS],
-		     status[(4 * MTGP32_TN - MTGP32_N + lid + pos)
-			    % MTGP32_LS]);
-	status[lid + MTGP32_TN] = r;
-	o = temper(&mtgp,
-		   r,
-		   status[(4 * MTGP32_TN - MTGP32_N + lid + pos - 1)
-			  % MTGP32_LS]);
-	d_data[size * gid + MTGP32_TN + i + lid] = o;
-	barrier(CLK_LOCAL_MEM_FENCE);
-	r = para_rec(&mtgp,
-		     status[2 * MTGP32_TN - MTGP32_N + lid],
-		     status[2 * MTGP32_TN - MTGP32_N + lid + 1],
-		     status[2 * MTGP32_TN - MTGP32_N + lid + pos]);
-	status[lid + 2 * MTGP32_TN] = r;
-	o = temper(&mtgp, r, status[lid + pos - 1 + 2 * MTGP32_TN - MTGP32_N]);
-	d_data[size * gid + 2 * MTGP32_TN + i + lid] = o;
-	barrier(CLK_LOCAL_MEM_FENCE);
-    }
-    // write back status for next call
-    status_write(d_status, status, gid, lid);
-}
-
-/**
- * kernel function.
- * This function generates single precision floating point numbers in d_data.
- *
- * @param[in,out] d_status kernel I/O data
- * @param[out] d_data output. IEEE single precision format.
- * @param[in] size number of output data requested.
- */
-__kernel void mtgp32_single_kernel(
-    __constant uint * param_tbl,
-    __constant uint * temper_tbl,
-    __constant uint * single_temper_tbl,
-    __constant uint * pos_tbl,
-    __constant uint * sh1_tbl,
-    __constant uint * sh2_tbl,
-    __global uint * d_status,
-    __global uint* d_data,
-    int size)
-{
-    const int gid = get_group_id(0);
-    const int lid = get_local_id(0);
-    __local uint status[MTGP32_LS];
-    mtgp32_t mtgp;
-    uint r;
-    uint o;
-
-    mtgp.status = status;
-    mtgp.param_tbl = &param_tbl[MTGP32_TS * gid];
-    mtgp.temper_tbl = &temper_tbl[MTGP32_TS * gid];
-    mtgp.single_temper_tbl = &single_temper_tbl[MTGP32_TS * gid];
-    mtgp.pos = pos_tbl[gid];
-    mtgp.sh1 = sh1_tbl[gid];
-    mtgp.sh2 = sh2_tbl[gid];
-
-    int pos = mtgp.pos;
-
-    // copy status data from global memory to shared memory.
-    status_read(status, d_status, gid, lid);
-
-    // main loop
-    for (int i = 0; i < size; i += MTGP32_LS) {
-	r = para_rec(&mtgp,
-		     status[MTGP32_LS - MTGP32_N + lid],
-		     status[MTGP32_LS - MTGP32_N + lid + 1],
-		     status[MTGP32_LS - MTGP32_N + lid + pos]);
-	status[lid] = r;
-	o = temper_single(&mtgp,
-			  r,
-			  status[MTGP32_LS - MTGP32_N + lid + pos - 1]);
-	d_data[size * gid + i + lid] = o;
-	barrier(CLK_LOCAL_MEM_FENCE);
-	r = para_rec(&mtgp,
-		     status[(4 * MTGP32_TN - MTGP32_N + lid) % MTGP32_LS],
-		     status[(4 * MTGP32_TN - MTGP32_N + lid + 1) % MTGP32_LS],
-		     status[(4 * MTGP32_TN - MTGP32_N + lid + pos)
-			    % MTGP32_LS]);
-	status[lid + MTGP32_TN] = r;
-	o = temper_single(
-	    &mtgp,
-	    r,
-	    status[(4 * MTGP32_TN - MTGP32_N + lid + pos - 1) % MTGP32_LS]);
-	d_data[size * gid + MTGP32_TN + i + lid] = o;
-	barrier(CLK_LOCAL_MEM_FENCE);
-	r = para_rec(&mtgp,
-		     status[2 * MTGP32_TN - MTGP32_N + lid],
-		     status[2 * MTGP32_TN - MTGP32_N + lid + 1],
-		     status[2 * MTGP32_TN - MTGP32_N + lid + pos]);
-	status[lid + 2 * MTGP32_TN] = r;
-	o = temper_single(&mtgp,
-			  r,
-			  status[lid + pos - 1 + 2 * MTGP32_TN - MTGP32_N]);
-	d_data[size * gid + 2 * MTGP32_TN + i + lid] = o;
-	barrier(CLK_LOCAL_MEM_FENCE);
-    }
-    // write back status for next call
-    status_write(d_status, status, gid, lid);
 }
 

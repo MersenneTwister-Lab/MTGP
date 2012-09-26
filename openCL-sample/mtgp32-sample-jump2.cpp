@@ -21,7 +21,7 @@ typedef uint32_t uint;
 #include "mtgp32-calc-poly.hpp"
 #include "mtgp-calc-jump.hpp"
 #include "mtgp32-fast-jump.h"
-#include "mtgp32-sample-jump-common.h"
+#include "mtgp32-sample-common.h"
 #include "parse_opt.h"
 
 using namespace std;
@@ -58,14 +58,161 @@ static uint32_t jump_poly[MTGP32_N];
 static uint32_t jump_initial[MTGP32_N * MAX_JUMP_TABLE];
 
 
-/* ========================= */
-/* mtgp32 sample code        */
-/* ========================= */
+/* =========================
+   declaration
+   ========================= */
+static int test(int argc, char * argv[]);
+static void make_jump_table(int group_num);
+static void initialize_by_seed(options& opt,
+			       Buffer& status_buffer,
+			       int group,
+			       uint32_t seed);
+static void initialize_by_array(options& opt,
+				Buffer& status_buffer,
+				int group,
+				uint32_t seed_array[],
+				int seed_size);
+static void status_jump(Buffer& status_buffer, int group);
+static void generate_uint32(int group_num,
+			    Buffer& status_buffer,
+			    int data_size);
+static void generate_single12(int group_num,
+			      Buffer& tiny_buffer,
+			      int data_size);
+static void generate_single01(int group_num,
+			      Buffer& tiny_buffer,
+			      int data_size);
+static int init_check_data(mtgp32_fast_t * mtgp32,
+			   uint32_t seed);
+static int init_check_data_array(mtgp32_fast_t * mtgp32,
+				 uint32_t seed_array[],
+				 int size);
+static void free_check_data(mtgp32_fast_t * mtgp32);
+static void check_data(uint32_t * h_data, int num_data);
+static void check_single12(float * h_data, int num_data);
+static void check_single01(float * h_data, int num_data);
+
+/* =========================
+   mtgp32 sample code
+   ========================= */
+/**
+ * main
+ * catch errors
+ *@param argc number of arguments
+ *@param argv array of arguments
+ *@return 0 normal, -1 error
+ */
+int main(int argc, char * argv[]) {
+    try {
+	return test(argc, argv);
+    } catch (cl::Error e) {
+	cerr << "Error Code:" << e.err() << endl;
+	cerr << errorMessage << endl;
+	cerr << e.what() << endl;
+    }
+}
+
+/**
+ * sample main
+ *@param argc number of arguments
+ *@param argv array of arguments
+ *@return 0 normal, -1 error
+ */
+static int test(int argc, char * argv[]) {
+#if defined(DEBUG)
+    cout << "test start" << endl;
+#endif
+    options opt;
+    if (!parse_opt(opt, argc, argv)) {
+	return -1;
+    }
+    // OpenCL setup
+#if defined(DEBUG)
+    cout << "openCL setup start" << endl;
+#endif
+    platforms = getPlatforms();
+    devices = getDevices();
+    context = getContext();
+#if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
+    source = getSource("mtgp32-jump.cli");
+#else
+    source = getSource("mtgp32-jump.cl");
+#endif
+    program = getProgram();
+    queue = getCommandQueue();
+#if defined(DEBUG)
+    cout << "openCL setup end" << endl;
+#endif
+
+    int max_group_size = getMaxGroupSize();
+    if (opt.group_num > max_group_size) {
+	cout << "group_num greater than max value("
+	     << max_group_size << ")"
+	     << endl;
+	return -1;
+    }
+    int max_size = getMaxWorkItemSize(0);
+    if (MTGP32_TN > max_size) {
+	cout << "workitem size is greater than max value("
+	     << dec << max_size << ")"
+	     << "current:" << dec << MTGP32_N << endl;
+	return -1;
+    }
+    if (MTGP32_N > max_size) {
+	thread_max = true;
+    }
+    int local_mem_size = getLocalMemSize();
+    if (local_mem_size < sizeof(uint32_t) * MTGP32_N * 2) {
+	cout << "local memory size is smaller than min value("
+	     << dec << sizeof(uint32_t) * MTGP32_N * 2
+	     << ") current:"
+	     << dec << local_mem_size << endl;
+	return -1;
+    }
+    Buffer status_buffer(context,
+			 CL_MEM_READ_WRITE,
+			 sizeof(uint32_t) * MTGP32_N * opt.group_num);
+
+    make_jump_table(opt.group_num);
+    int data_count = opt.data_count;
+    int data_unit = jump_step * opt.group_num;
+
+    // initialize by seed
+    // generate uint32_t
+    init_check_data(&mtgp32, 1234);
+    initialize_by_seed(opt, status_buffer, opt.group_num, 1234);
+    while (data_count > 0) {
+	generate_uint32(opt.group_num, status_buffer, data_unit);
+	status_jump(status_buffer, opt.group_num);
+	data_count -= data_unit;
+    }
+    free_check_data(&mtgp32);
+
+    // initialize by array
+    // generate single float
+    uint32_t seed_array[5] = {1, 2, 3, 4, 5};
+    init_check_data_array(&mtgp32, seed_array, 5);
+    initialize_by_array(opt, status_buffer, opt.group_num,
+			seed_array, 5);
+    data_count = opt.data_count;
+    while (data_count > 0) {
+	generate_single12(opt.group_num, status_buffer, data_unit);
+	status_jump(status_buffer, opt.group_num);
+	data_count -= data_unit;
+	if (data_count > 0) {
+	    generate_single01(opt.group_num, status_buffer, data_unit);
+	    status_jump(status_buffer, opt.group_num);
+	    data_count -= data_unit;
+	}
+    }
+    free_check_data(&mtgp32);
+    return 0;
+}
 
 /**
  * prepare jump polynomial.
- *
  * this step may be pre-computed in practical use.
+ * @param group_num number of work groups
  */
 static void make_jump_table(int group_num)
 {
@@ -113,6 +260,363 @@ static void make_jump_table(int group_num)
 #endif
 }
 
+/**
+ * initialize mtgp status in device global memory
+ * using seed and fixed jump.
+ * jump step is fixed to 3^162.
+ *@param status_buffer mtgp status in device global memory
+ *@param group number of group
+ *@param seed seed for initialization
+ */
+static void initialize_by_seed(options& opt,
+			       Buffer& status_buffer,
+			       int group,
+			       uint32_t seed)
+{
+#if defined(DEBUG)
+    cout << "initialize_by_seed start" << endl;
+#endif
+    // jump table
+    Buffer jump_table_buffer(context,
+			     CL_MEM_READ_WRITE,
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t));
+    queue.enqueueWriteBuffer(jump_table_buffer,
+			     CL_TRUE,
+			     0,
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t),
+			     jump_initial);
+
+    Kernel init_kernel(program, "mtgp32_jump_seed_kernel");
+#if defined(DEBUG)
+    cout << "arg0 start" << endl;
+#endif
+    init_kernel.setArg(0, status_buffer);
+    init_kernel.setArg(1, seed);
+    init_kernel.setArg(2, jump_table_buffer);
+#if defined(DEBUG)
+    cout << "arg2 end" << endl;
+#endif
+    int local_item = MTGP32_N;
+    if (thread_max) {
+	local_item = MTGP32_TN;
+    }
+    NDRange global(group * local_item);
+    NDRange local(local_item);
+    Event event;
+#if defined(DEBUG)
+    cout << "global:" << dec << group * local_item << endl;
+    cout << "group:" << dec << group << endl;
+    cout << "local:" << dec << local_item << endl;
+#endif
+    queue.enqueueNDRangeKernel(init_kernel,
+			       NullRange,
+			       global,
+			       local,
+			       NULL,
+			       &event);
+    double time = get_time(event);
+    cout << "initializing time = " << time * 1000 << "ms" << endl;
+#if 0
+    uint status[group * MTGP32_N];
+    queue.enqueueReadBuffer(status_buffer,
+			    CL_TRUE,
+			    0,
+			    sizeof(uint32_t) * MTGP32_N * group,
+			    status);
+#if defined(DEBUG)
+    cout << "status[0]:" << hex << status[0] << endl;
+    cout << "status[MTGP32_N - 1]:" << hex << status[MTGP32_N - 1] << endl;
+    cout << "status[MTGP32_N]:" << hex << status[MTGP32_N] << endl;
+    cout << "status[MTGP32_N + 1]:" << hex << status[MTGP32_N + 1] << endl;
+#endif
+    check_status(status, group);
+#endif
+#if defined(DEBUG)
+    cout << "initialize_by_seed end" << endl;
+#endif
+}
+
+/**
+ * initialize mtgp status in device global memory
+ * using an array of seeds and jump.
+ *@param status_buffer mtgp status in device global memory
+ *@param group number of group
+ *@param seed_array seeds for initialization
+ *@param seed_size size of seed_array
+ */
+static void initialize_by_array(options& opt,
+				Buffer& status_buffer,
+				int group,
+				uint32_t seed_array[],
+				int seed_size)
+{
+#if defined(DEBUG)
+    cout << "initialize_by_array start" << endl;
+#endif
+    // jump table
+    Buffer jump_table_buffer(context,
+			     CL_MEM_READ_WRITE,
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t));
+    queue.enqueueWriteBuffer(jump_table_buffer,
+			     CL_TRUE,
+			     0,
+			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t),
+			     jump_initial);
+
+    Buffer seed_array_buffer(context,
+			     CL_MEM_READ_WRITE,
+			     seed_size * sizeof(uint32_t));
+    queue.enqueueWriteBuffer(seed_array_buffer,
+			     CL_TRUE,
+			     0,
+			     seed_size * sizeof(uint32_t),
+			     seed_array);
+    Kernel init_kernel(program, "mtgp32_jump_array_kernel");
+    init_kernel.setArg(0, status_buffer);
+    init_kernel.setArg(1, seed_array_buffer);
+    init_kernel.setArg(2, seed_size);
+    init_kernel.setArg(3, jump_table_buffer);
+    int local_item = MTGP32_N;
+    if (thread_max) {
+	local_item = MTGP32_TN;
+    }
+    NDRange global(group * local_item);
+    NDRange local(local_item);
+    Event event;
+    queue.enqueueNDRangeKernel(init_kernel,
+			       NullRange,
+			       global,
+			       local,
+			       NULL,
+			       &event);
+    double time = get_time(event);
+#if 0
+    uint status[group * MTGP32_N];
+    queue.enqueueReadBuffer(status_buffer,
+			    CL_TRUE,
+			    0,
+			    sizeof(uint32_t) * MTGP32_N * group,
+			    status);
+    check_status(status, group);
+#endif
+    cout << "initializing time = " << time * 1000 << "ms" << endl;
+#if defined(DEBUG)
+    cout << "initialize_by_array end" << endl;
+#endif
+}
+
+/**
+ * jump mtgp status in device global memory
+ *@param status_buffer mtgp status in device global memory
+ *@param group number of group
+ */
+static void status_jump(Buffer& status_buffer, int group)
+{
+#if defined(DEBUG)
+    cout << "jump start" << endl;
+#endif
+    // jump table
+    Buffer jump_table_buffer(context,
+			     CL_MEM_READ_WRITE,
+			     MTGP32_N * sizeof(uint32_t));
+    queue.enqueueWriteBuffer(jump_table_buffer,
+			     CL_TRUE,
+			     0,
+			     MTGP32_N * sizeof(uint32_t),
+			     jump_poly);
+
+    Kernel init_kernel(program, "mtgp32_jump_kernel");
+    init_kernel.setArg(0, status_buffer);
+    init_kernel.setArg(1, jump_table_buffer);
+    int local_item = MTGP32_N;
+    if (thread_max) {
+	local_item = MTGP32_TN;
+    }
+    NDRange global(group * local_item);
+    NDRange local(local_item);
+    Event event;
+#if defined(DEBUG)
+    cout << "global:" << dec << group * local_item << endl;
+    cout << "group:" << dec << group << endl;
+    cout << "local:" << dec << local_item << endl;
+#endif
+    queue.enqueueNDRangeKernel(init_kernel,
+			       NullRange,
+			       global,
+			       local,
+			       NULL,
+			       &event);
+    double time = get_time(event);
+    cout << "jump time = " << time * 1000 << "ms" << endl;
+#if defined(DEBUG)
+    cout << "jump end" << endl;
+#endif
+}
+
+/**
+ * generate 32 bit unsigned random numbers in device global memory
+ *@group_num number of groups for execution
+ *@param status_buffer mtgp status in device global memory
+ *@param data_size number of data to generate
+ */
+static void generate_uint32(int group_num,
+			    Buffer& status_buffer,
+			    int data_size)
+{
+#if defined(DEBUG)
+    cout << "generate_uint32 start" << endl;
+#endif
+    int item_num = MTGP32_TN * group_num;
+    int min_size = MTGP32_LS * group_num;
+    if (data_size % min_size != 0) {
+	data_size = (data_size / min_size + 1) * min_size;
+    }
+    Kernel uint_kernel(program, "mtgp32_uint32_kernel");
+    Buffer output_buffer(context,
+			 CL_MEM_READ_WRITE,
+			 data_size * sizeof(uint32_t));
+    uint_kernel.setArg(0, status_buffer);
+    uint_kernel.setArg(1, output_buffer);
+    uint_kernel.setArg(2, data_size / group_num);
+    NDRange global(item_num);
+    NDRange local(MTGP32_TN);
+    Event generate_event;
+#if defined(DEBUG)
+    cout << "generate_uint32 enque kernel start" << endl;
+#endif
+    queue.enqueueNDRangeKernel(uint_kernel,
+			       NullRange,
+			       global,
+			       local,
+			       NULL,
+			       &generate_event);
+#if defined(DEBUG)
+    cout << "generate_uint32 enque kernel end" << endl;
+#endif
+    uint32_t * output = new uint32_t[data_size];
+#if defined(DEBUG)
+    cout << "generate_uint32 event wait start" << endl;
+#endif
+    generate_event.wait();
+#if defined(DEBUG)
+    cout << "generate_uint32 event wait end" << endl;
+#endif
+#if defined(DEBUG)
+    cout << "generate_uint32 readbuffer start" << endl;
+#endif
+    queue.enqueueReadBuffer(output_buffer,
+			    CL_TRUE,
+			    0,
+			    data_size * sizeof(uint32_t),
+			    &output[0]);
+#if defined(DEBUG)
+    cout << "generate_uint32 readbuffer end" << endl;
+#endif
+    check_data(output, data_size);
+    print_uint32(&output[0], data_size, item_num);
+    double time = get_time(generate_event);
+    cout << "generate time:" << time * 1000 << "ms" << endl;
+    delete[] output;
+#if defined(DEBUG)
+    cout << "generate_uint32 end" << endl;
+#endif
+}
+
+/**
+ * generate single precision floating point numbers in the range [1, 2)
+ * in device global memory
+ *@group_num number of groups for execution
+ *@param status_buffer mtgp status in device global memory
+ *@param data_size number of data to generate
+ */
+static void generate_single12(int group_num,
+			      Buffer& tiny_buffer,
+			      int data_size)
+{
+    int item_num = MTGP32_TN * group_num;
+    int min_size = MTGP32_LS * group_num;
+    if (data_size % min_size != 0) {
+	data_size = (data_size / min_size + 1) * min_size;
+    }
+    Kernel single_kernel(program, "mtgp32_single12_kernel");
+    Buffer output_buffer(context,
+			 CL_MEM_READ_WRITE,
+			 data_size * sizeof(float));
+    single_kernel.setArg(0, tiny_buffer);
+    single_kernel.setArg(1, output_buffer);
+    single_kernel.setArg(2, data_size / group_num);
+    NDRange global(item_num);
+    NDRange local(MTGP32_TN);
+    Event generate_event;
+    queue.enqueueNDRangeKernel(single_kernel,
+			       NullRange,
+			       global,
+			       local,
+			       NULL,
+			       &generate_event);
+    float * output = new float[data_size];
+    generate_event.wait();
+    queue.enqueueReadBuffer(output_buffer,
+			    CL_TRUE,
+			    0,
+			    data_size * sizeof(float),
+			    &output[0]);
+    check_single12(output, data_size);
+    print_float(output, data_size, item_num);
+    double time = get_time(generate_event);
+    delete[] output;
+    cout << "generate time:" << time * 1000 << "ms" << endl;
+}
+
+/**
+ * generate single precision floating point numbers in the range [0, 1)
+ * in device global memory
+ *@group_num number of groups for execution
+ *@param status_buffer mtgp status in device global memory
+ *@param data_size number of data to generate
+ */
+static void generate_single01(int group_num,
+			      Buffer& tiny_buffer,
+			      int data_size)
+{
+    int item_num = MTGP32_TN * group_num;
+    int min_size = MTGP32_LS * group_num;
+    if (data_size % min_size != 0) {
+	data_size = (data_size / min_size + 1) * min_size;
+    }
+    Kernel single_kernel(program, "mtgp32_single01_kernel");
+    Buffer output_buffer(context,
+			 CL_MEM_READ_WRITE,
+			 data_size * sizeof(float));
+    single_kernel.setArg(0, tiny_buffer);
+    single_kernel.setArg(1, output_buffer);
+    single_kernel.setArg(2, data_size / group_num);
+    NDRange global(item_num);
+    NDRange local(MTGP32_TN);
+    Event generate_event;
+    queue.enqueueNDRangeKernel(single_kernel,
+			       NullRange,
+			       global,
+			       local,
+			       NULL,
+			       &generate_event);
+    float * output = new float[data_size];
+    generate_event.wait();
+    queue.enqueueReadBuffer(output_buffer,
+			    CL_TRUE,
+			    0,
+			    data_size * sizeof(float),
+			    &output[0]);
+    check_single01(output, data_size);
+    print_float(output, data_size, item_num);
+    double time = get_time(generate_event);
+    delete[] output;
+    cout << "generate time:" << time * 1000 << "ms" << endl;
+}
+
+/* ==============
+ * check programs
+ * ==============*/
 static int init_check_data(mtgp32_fast_t * mtgp32,
 			   uint32_t seed)
 {
@@ -193,7 +697,7 @@ static void check_data(uint32_t * h_data, int num_data)
 #endif
 }
 
-static void check_single(float * h_data, int num_data)
+static void check_single12(float * h_data, int num_data)
 {
 #if defined(DEBUG)
     cout << "check_single start" << endl;
@@ -225,410 +729,38 @@ static void check_single(float * h_data, int num_data)
     cout << "check_single end" << endl;
 #endif
 }
-void initialize_by_seed(options& opt,
-			Buffer& status_buffer,
-			int group,
-			uint32_t seed)
+
+static void check_single01(float * h_data, int num_data)
 {
 #if defined(DEBUG)
-    cout << "initialize_by_seed start" << endl;
+    cout << "check_single start" << endl;
 #endif
-    // jump table
-    Buffer jump_table_buffer(context,
-			     CL_MEM_READ_WRITE,
-			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t));
-    queue.enqueueWriteBuffer(jump_table_buffer,
-			     CL_TRUE,
-			     0,
-			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t),
-			     jump_initial);
-
-    Kernel init_kernel(program, "mtgp32_jump_seed_kernel");
-#if defined(DEBUG)
-    cout << "arg0 start" << endl;
-#endif
-    init_kernel.setArg(0, status_buffer);
-    init_kernel.setArg(1, seed);
-    init_kernel.setArg(2, jump_table_buffer);
-#if defined(DEBUG)
-    cout << "arg2 end" << endl;
-#endif
-    int local_item = MTGP32_N;
-    if (thread_max) {
-	local_item = MTGP32_TN;
-    }
-    NDRange global(group * local_item);
-    NDRange local(local_item);
-    Event event;
-#if defined(DEBUG)
-    cout << "global:" << dec << group * local_item << endl;
-    cout << "group:" << dec << group << endl;
-    cout << "local:" << dec << local_item << endl;
-#endif
-    queue.enqueueNDRangeKernel(init_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &event);
-    double time = get_time(event);
-    cout << "initializing time = " << time * 1000 << "ms" << endl;
-#if 0
-    uint status[group * MTGP32_N];
-    queue.enqueueReadBuffer(status_buffer,
-			    CL_TRUE,
-			    0,
-			    sizeof(uint32_t) * MTGP32_N * group,
-			    status);
-#if defined(DEBUG)
-    cout << "status[0]:" << hex << status[0] << endl;
-    cout << "status[MTGP32_N - 1]:" << hex << status[MTGP32_N - 1] << endl;
-    cout << "status[MTGP32_N]:" << hex << status[MTGP32_N] << endl;
-    cout << "status[MTGP32_N + 1]:" << hex << status[MTGP32_N + 1] << endl;
-#endif
-    check_status(status, group);
-#endif
-#if defined(DEBUG)
-    cout << "initialize_by_seed end" << endl;
-#endif
-}
-
-void initialize_by_array(options& opt,
-			 Buffer& status_buffer,
-			 int group,
-			 uint32_t seed_array[],
-			 int seed_size)
-{
-#if defined(DEBUG)
-    cout << "initialize_by_array start" << endl;
-#endif
-    // jump table
-    Buffer jump_table_buffer(context,
-			     CL_MEM_READ_WRITE,
-			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t));
-    queue.enqueueWriteBuffer(jump_table_buffer,
-			     CL_TRUE,
-			     0,
-			     MTGP32_N * MAX_JUMP_TABLE * sizeof(uint32_t),
-			     jump_initial);
-
-    Buffer seed_array_buffer(context,
-			     CL_MEM_READ_WRITE,
-			     seed_size * sizeof(uint32_t));
-    queue.enqueueWriteBuffer(seed_array_buffer,
-			     CL_TRUE,
-			     0,
-			     seed_size * sizeof(uint32_t),
-			     seed_array);
-    Kernel init_kernel(program, "mtgp32_jump_array_kernel");
-    init_kernel.setArg(0, status_buffer);
-    init_kernel.setArg(1, seed_array_buffer);
-    init_kernel.setArg(2, seed_size);
-    init_kernel.setArg(3, jump_table_buffer);
-    int local_item = MTGP32_N;
-    if (thread_max) {
-	local_item = MTGP32_TN;
-    }
-    NDRange global(group * local_item);
-    NDRange local(local_item);
-    Event event;
-    queue.enqueueNDRangeKernel(init_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &event);
-    double time = get_time(event);
-#if 0
-    uint status[group * MTGP32_N];
-    queue.enqueueReadBuffer(status_buffer,
-			    CL_TRUE,
-			    0,
-			    sizeof(uint32_t) * MTGP32_N * group,
-			    status);
-    cout << "initializing time = " << time * 1000 << "ms" << endl;
-    check_status(status, group);
-#endif
-#if defined(DEBUG)
-    cout << "initialize_by_array end" << endl;
-#endif
-}
-
-void status_jump(options& opt, Buffer& status_buffer, int group)
-{
-#if defined(DEBUG)
-    cout << "jump start" << endl;
-#endif
-    // jump table
-    Buffer jump_table_buffer(context,
-			     CL_MEM_READ_WRITE,
-			     MTGP32_N * sizeof(uint32_t));
-    queue.enqueueWriteBuffer(jump_table_buffer,
-			     CL_TRUE,
-			     0,
-			     MTGP32_N * sizeof(uint32_t),
-			     jump_poly);
-
-    Kernel init_kernel(program, "mtgp32_jump_kernel");
-    init_kernel.setArg(0, status_buffer);
-    init_kernel.setArg(1, jump_table_buffer);
-    int local_item = MTGP32_N;
-    if (thread_max) {
-	local_item = MTGP32_TN;
-    }
-    NDRange global(group * local_item);
-    NDRange local(local_item);
-    Event event;
-#if defined(DEBUG)
-    cout << "global:" << dec << group * local_item << endl;
-    cout << "group:" << dec << group << endl;
-    cout << "local:" << dec << local_item << endl;
-#endif
-    queue.enqueueNDRangeKernel(init_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &event);
-    double time = get_time(event);
-    cout << "jump time = " << time * 1000 << "ms" << endl;
-#if defined(DEBUG)
-    cout << "jump end" << endl;
-#endif
-}
-
-void print_uint32(uint32_t data[], int size, int item_num)
-{
-    int max_seq = 10;
-    int max_item = 6;
-    if (size / item_num < max_seq) {
-	max_seq = size / item_num;
-    }
-    if (item_num < max_item) {
-	max_item = item_num;
-    }
-    for (int i = 0; i < max_seq; i++) {
-	for (int j = 0; j < max_item; j++) {
-	    cout << setw(10) << dec << data[item_num * i + j] << " ";
+    bool error = false;
+    bool disp_flg = true;
+    int count = 0;
+    for (int j = 0; j < num_data; j++) {
+	float r =  mtgp32_genrand_close_open(&mtgp32);
+	if (!(-FLT_EPSILON <= h_data[j] - r &&
+	     h_data[j] - r <= FLT_EPSILON)
+	    && disp_flg) {
+	    cout << "mismatch"
+		 << " j = " << dec << j
+		 << " data = " << dec << h_data[j]
+		 << " r = " << dec << r << endl;
+	    cout << "check_data check N.G!" << endl;
+	    count++;
+	    error = true;
 	}
-	cout << endl;
-    }
-}
-
-void print_float(float data[], int size, int item_num)
-{
-    int max_seq = 10;
-    int max_item = 6;
-    if (size / item_num < max_seq) {
-	max_seq = size / item_num;
-    }
-    if (item_num < max_item) {
-	max_item = item_num;
-    }
-    for (int i = 0; i < max_seq; i++) {
-	for (int j = 0; j < max_item; j++) {
-	    cout << setprecision(9) << setw(10)
-		 << dec << left << setfill('0')
-		 << data[item_num * i + j] << " ";
+	if (count > 10) {
+	    disp_flg = false;
 	}
-	cout << endl;
     }
-}
-
-void generate_uint32(int group_num,
-		     Buffer& status_buffer,
-		     int data_size)
-{
-#if defined(DEBUG)
-    cout << "generate_uint32 start" << endl;
-#endif
-    int item_num = MTGP32_TN * group_num;
-    int min_size = MTGP32_LS * group_num;
-    if (data_size % min_size != 0) {
-	data_size = (data_size / min_size + 1) * min_size;
+    if (!error) {
+	cout << "check_single check O.K!" << endl;
     }
-    Kernel uint_kernel(program, "mtgp32_uint32_kernel");
-    Buffer output_buffer(context,
-			 CL_MEM_READ_WRITE,
-			 data_size * sizeof(uint32_t));
-    uint_kernel.setArg(0, status_buffer);
-    uint_kernel.setArg(1, output_buffer);
-    uint_kernel.setArg(2, data_size / group_num);
-    NDRange global(item_num);
-    NDRange local(MTGP32_TN);
-    Event generate_event;
 #if defined(DEBUG)
-    cout << "generate_uint32 enque kernel start" << endl;
-#endif
-    queue.enqueueNDRangeKernel(uint_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &generate_event);
-#if defined(DEBUG)
-    cout << "generate_uint32 enque kernel end" << endl;
-#endif
-    uint32_t * output = new uint32_t[data_size];
-#if defined(DEBUG)
-    cout << "generate_uint32 event wait start" << endl;
-#endif
-    generate_event.wait();
-#if defined(DEBUG)
-    cout << "generate_uint32 event wait end" << endl;
-#endif
-#if defined(DEBUG)
-    cout << "generate_uint32 readbuffer start" << endl;
-#endif
-    queue.enqueueReadBuffer(output_buffer,
-			    CL_TRUE,
-			    0,
-			    data_size * sizeof(uint32_t),
-			    &output[0]);
-#if defined(DEBUG)
-    cout << "generate_uint32 readbuffer end" << endl;
-#endif
-    check_data(output, data_size);
-    print_uint32(&output[0], data_size, item_num);
-    double time = get_time(generate_event);
-    cout << "generate time:" << time * 1000 << "ms" << endl;
-    delete[] output;
-#if defined(DEBUG)
-    cout << "generate_uint32 end" << endl;
+    cout << "check_single end" << endl;
 #endif
 }
 
-void generate_single(int group_num,
-		     Buffer& tiny_buffer,
-		     int data_size)
-{
-    int item_num = MTGP32_TN * group_num;
-    int min_size = MTGP32_LS * group_num;
-    if (data_size % min_size != 0) {
-	data_size = (data_size / min_size + 1) * min_size;
-    }
-    Kernel single_kernel(program, "mtgp32_single_kernel");
-    Buffer output_buffer(context,
-			 CL_MEM_READ_WRITE,
-			 data_size * sizeof(float));
-    single_kernel.setArg(0, tiny_buffer);
-    single_kernel.setArg(1, output_buffer);
-    single_kernel.setArg(2, data_size / group_num);
-    NDRange global(item_num);
-    NDRange local(MTGP32_TN);
-    Event generate_event;
-    queue.enqueueNDRangeKernel(single_kernel,
-			       NullRange,
-			       global,
-			       local,
-			       NULL,
-			       &generate_event);
-    float * output = new float[data_size];
-    generate_event.wait();
-    queue.enqueueReadBuffer(output_buffer,
-			    CL_TRUE,
-			    0,
-			    data_size * sizeof(float),
-			    &output[0]);
-    check_single(output, data_size);
-    print_float(&output[0], data_size, item_num);
-    double time = get_time(generate_event);
-    delete[] output;
-    cout << "generate time:" << time * 1000 << "ms" << endl;
-}
 
-int test(int argc, char * argv[]) {
-#if defined(DEBUG)
-    cout << "test start" << endl;
-#endif
-    options opt;
-    if (!parse_opt(opt, argc, argv)) {
-	return -1;
-    }
-    // OpenCL setup
-#if defined(DEBUG)
-    cout << "openCL setup start" << endl;
-#endif
-    platforms = getPlatforms();
-    devices = getDevices();
-    context = getContext();
-#if defined(APPLE) || defined(__MACOSX) || defined(__APPLE__)
-    source = getSource("mtgp32-jump.cli");
-#else
-    source = getSource("mtgp32-jump.cl");
-#endif
-    program = getProgram();
-    queue = getCommandQueue();
-#if defined(DEBUG)
-    cout << "openCL setup end" << endl;
-#endif
-
-    int max_group_size = getMaxGroupSize();
-    if (opt.group_num > max_group_size) {
-	cout << "group_num greater than max value("
-	     << max_group_size << ")"
-	     << endl;
-	return -1;
-    }
-    int max_size = getMaxWorkItemSize(0);
-    if (MTGP32_TN > max_size) {
-	cout << "workitem size is greater than max value("
-	     << dec << max_size << ")"
-	     << "current:" << dec << MTGP32_N << endl;
-	return -1;
-    }
-    if (MTGP32_N > max_size) {
-	thread_max = true;
-    }
-    int local_mem_size = getLocalMemSize();
-    if (local_mem_size < sizeof(uint32_t) * MTGP32_N * 2) {
-	cout << "local memory size is smaller than min value("
-	     << dec << sizeof(uint32_t) * MTGP32_N * 2
-	     << ") current:"
-	     << dec << local_mem_size << endl;
-	return -1;
-    }
-    Buffer status_buffer(context,
-			 CL_MEM_READ_WRITE,
-			 sizeof(uint32_t) * MTGP32_N * opt.group_num);
-
-    make_jump_table(opt.group_num);
-    int data_count = opt.data_count;
-    int data_unit = jump_step * opt.group_num;
-
-    // initialize by seed
-    // generate uint32_t
-    init_check_data(&mtgp32, 1234);
-    initialize_by_seed(opt, status_buffer, opt.group_num, 1234);
-    while (data_count > 0) {
-	generate_uint32(opt.group_num, status_buffer, data_unit);
-	status_jump(opt, status_buffer, opt.group_num);
-	data_count -= data_unit;
-    }
-    free_check_data(&mtgp32);
-
-    // initialize by array
-    // generate single float
-    uint32_t seed_array[5] = {1, 2, 3, 4, 5};
-    init_check_data_array(&mtgp32, seed_array, 5);
-    initialize_by_array(opt, status_buffer, opt.group_num,
-			seed_array, 5);
-    data_count = opt.data_count;
-    while (data_count > 0) {
-	generate_single(opt.group_num, status_buffer, data_unit);
-	status_jump(opt, status_buffer, opt.group_num);
-	data_count -= data_unit;
-    }
-    free_check_data(&mtgp32);
-    return 0;
-}
-
-int main(int argc, char * argv[]) {
-    try {
-	return test(argc, argv);
-    } catch (cl::Error e) {
-	cerr << "Error Code:" << e.err() << endl;
-	cerr << errorMessage << endl;
-	cerr << e.what() << endl;
-    }
-}

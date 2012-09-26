@@ -48,8 +48,8 @@ static inline void print_float(float data[], int size, int item_num)
     }
     for (int i = 0; i < max_seq; i++) {
 	for (int j = 0; j < max_item; j++) {
-	    cout << setprecision(9) << setw(10)
-		 << dec << left << setfill('0')
+	    cout << setprecision(9) << setw(12)
+		 << dec << left << setfill(' ')
 		 << data[item_num * i + j] << " ";
 	}
 	cout << endl;

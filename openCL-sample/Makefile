@@ -14,6 +14,7 @@ LINKOPT = -lntl ${LIBGF2X} ${LIBGMP}
 .SUFFIXES:      .cl .clh .cli
 
 mtgp32-sample: mtgp32-sample.cpp \
+	mtgp32-sample-common.h \
 	mtgp32.cl \
 	mtgp32.cli \
 	../mtgp32-fast.h \
@@ -25,21 +26,36 @@ mtgp32-sample: mtgp32-sample.cpp \
 	../mtgp32-fast.o \
 	../mtgp32-param-fast.o
 
-mtgp32-sample-jump1: mtgp32-sample-jump1.cpp ../mtgp32-fast-jump.h \
-	mtgp32-jump-table.o ../mtgp32-fast.h mtgp32-jump.cl \
+mtgp32-sample-jump1: mtgp32-sample-jump1.cpp \
+	mtgp32-sample-common.h \
+	mtgp32-jump.cl \
 	mtgp32-jump.cli \
-	parse_opt.o mtgp32-jump-table.o
-	${CC} -o $@ mtgp32-sample-jump1.cpp parse_opt.o \
-	mtgp32-jump-table.o ../mtgp32-fast-jump.o ../mtgp32-fast.o \
+	../mtgp32-fast-jump.h \
+	../mtgp32-fast.h \
+	parse_opt.o \
+	mtgp32-jump-table.o
+	${CC} -o $@ mtgp32-sample-jump1.cpp \
+	parse_opt.o \
+	mtgp32-jump-table.o \
+	../mtgp32-fast-jump.o \
+	../mtgp32-fast.o \
 	../mtgp32-param-fast.o
 
-mtgp32-sample-jump2: mtgp32-sample-jump2.cpp ../mtgp32-fast-jump.h \
-	mtgp32-jump-table.o ../mtgp32-fast.h mtgp32-jump.cl \
-	mtgp32-jump.cli ../mtgp32-calc-poly.hpp ../mtgp-calc-jump.hpp \
+mtgp32-sample-jump2: mtgp32-sample-jump2.cpp \
+	mtgp32-jump.cl \
+	mtgp32-jump.cli \
+	../mtgp32-fast-jump.h \
+	../mtgp32-fast.h \
+	../mtgp32-calc-poly.hpp \
+	../mtgp-calc-jump.hpp \
 	parse_opt.o
-	${CC} -o $@ mtgp32-sample-jump2.cpp parse_opt.o \
-	../mtgp32-fast-jump.o ../mtgp32-fast.o \
-	../mtgp32-param-fast.o ../mtgp32-calc-poly.o ${LINKOPT}
+	${CC} -o $@ mtgp32-sample-jump2.cpp \
+	parse_opt.o \
+	../mtgp32-fast-jump.o \
+	../mtgp32-fast.o \
+	../mtgp32-param-fast.o \
+	../mtgp32-calc-poly.o \
+	${LINKOPT}
 
 .cl.cli:
 	cpp $< $@
