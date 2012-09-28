@@ -63,7 +63,9 @@ CCFLAGS = $(OPTI) $(WARN) $(STD) $(DEBUG)
 # for Athlon 64
 # -----------------
 #CCFLAGS += -march=athlon64
-OBJS = mtgp32-fast.o mtgp64-fast.o mtgp32-param-fast.o mtgp64-param-fast.o
+OBJS = mtgp32-fast.o mtgp64-fast.o mtgp32-param-fast.o mtgp64-param-fast.o \
+	mtgp-calc-jump.o mtgp64-fast-jump.o mtgp32-calc-poly.o \
+	mtgp32-fast-jump.o mtgp64-calc-poly.o
 
 all:test64-ref test64-fast test32-ref test32-fast ${OBJS}
 

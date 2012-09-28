@@ -120,6 +120,32 @@ static inline cl::Program::Sources getSource(const char * filename)
     return source;
 }
 
+static inline bool hasDoubleExtension()
+{
+    using namespace std;
+    using namespace cl;
+#if defined(DEBUG)
+    cout << "start has double extension" << endl;
+#endif
+    std::string extensions;
+    cl_int err;
+    errorMessage = "device getinfo(CL_DEVICE_EXTENSIONS) failed";
+    err = devices[0].getInfo(CL_DEVICE_EXTENSIONS, &extensions);
+    if (err != CL_SUCCESS) {
+	cout << "device getinfo(CL_DEVICE_EXTENSIONS) err:"
+	     << dec << err << endl;
+    }
+    errorMessage = "";
+#if defined(DEBUG)
+    cout << "device extensions:" << extensions << endl;
+#endif
+    if (extensions.find("cl_khr_fp64",0) != std::string::npos) {
+	return true;
+    } else {
+	return false;
+    }
+}
+
 static inline cl::Program getProgram()
 {
     using namespace std;
@@ -134,6 +160,9 @@ static inline cl::Program getProgram()
     cout << "start build" << endl;
 #endif
     const char * option = "";
+    if (hasDoubleExtension()) {
+	option = "-DHAVE_DOUBLE";
+    }
     errorMessage = "program build failed";
     try {
 	err = program.build(devices, option);
