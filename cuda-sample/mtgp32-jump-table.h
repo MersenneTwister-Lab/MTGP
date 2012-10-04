@@ -10,7 +10,7 @@
  * mtgp32_jump_table[4] jump  256 x 3<sup>162</sup> steps
  * mtgp32_jump_table[5] jump 1024 x 3<sup>162</sup> steps
  */
-__constant__ uint32_t mtgp32_jump_table[6][MTGP32_N+1] = {
+__constant__ uint32_t mtgp32_jump_table[6][MTGP32_N] = {
     /* jump step:1 x 3<sup>162</sup> steps */
     {0x96b220e4,0x41c45b56,0x860b7e28,0x78ba7d00,0xc8eb6518,
      0x10501372,0xc346c286,0x2dfd0308,0xed4341d9,0x268bdbcc,

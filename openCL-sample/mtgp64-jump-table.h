@@ -13,6 +13,8 @@
  * mtgp64_jump_table[5] jump 1024 x 3<sup>162</sup> steps
  */
 #include <stdint.h>
+#include "mtgp64-sample-common.h"
+#define MTGP64_JMP_TBL_SIZE 6
 extern const uint32_t mtgp64_jump_table[];
 
 #endif

@@ -146,7 +146,7 @@ static inline bool hasDoubleExtension()
     }
 }
 
-static inline cl::Program getProgram()
+static inline cl::Program getProgram(const char * option = "")
 {
     using namespace std;
     using namespace cl;
@@ -159,10 +159,12 @@ static inline cl::Program getProgram()
 #if defined(DEBUG)
     cout << "start build" << endl;
 #endif
+#if 0
     const char * option = "";
     if (hasDoubleExtension()) {
 	option = "-DHAVE_DOUBLE";
     }
+#endif
     errorMessage = "program build failed";
     try {
 	err = program.build(devices, option);
@@ -248,6 +250,28 @@ static inline cl_ulong getLocalMemSize()
     errorMessage = "";
 #if defined(DEBUG)
     cout << "end get local mem size" << endl;
+#endif
+    return size;
+}
+
+static inline cl_ulong getConstantMemSize()
+{
+    using namespace std;
+    using namespace cl;
+#if defined(DEBUG)
+    cout << "start get constant mem size" << endl;
+#endif
+    cl_int err;
+    cl_ulong size;
+    errorMessage = "device getinfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE) failed";
+    err = devices[0].getInfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, &size);
+    if (err != CL_SUCCESS) {
+	cout << "device getinfo(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE) err:"
+	     << dec << err << endl;
+    }
+    errorMessage = "";
+#if defined(DEBUG)
+    cout << "end get constant mem size" << endl;
 #endif
     return size;
 }

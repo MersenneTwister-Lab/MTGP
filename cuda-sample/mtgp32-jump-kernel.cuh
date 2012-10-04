@@ -380,7 +380,7 @@ __device__ void mtgp32_init_by_array(uint32_t *seed_array, int length) {
  *
  *
  */
-__device__ void mtgp32_table_jump(int bid, int tid, uint32_t jump_table[][MTGP32_N + 1])
+__device__ void mtgp32_table_jump(int bid, int tid, uint32_t jump_table[][MTGP32_N])
 {
     for (int i = 0; i < 32; i++) {
 	if ((bid & (1 << i)) == 0) {
@@ -450,7 +450,7 @@ __global__ void mtgp32_jump_long_array_kernel(mtgp32_kernel_status_t * d_status,
  * @param[in,out] d_status kernel I/O data
  */
 __global__ void mtgp32_jump_seed_kernel(mtgp32_kernel_status_t* d_status,
-					uint32_t jump_table[][MTGP32_N + 1],
+					uint32_t jump_table[][MTGP32_N],
 					uint32_t seed)
 {
     const int bid = blockIdx.x;
@@ -473,7 +473,7 @@ __global__ void mtgp32_jump_seed_kernel(mtgp32_kernel_status_t* d_status,
  * @param[in,out] d_status kernel I/O data
  */
 __global__ void mtgp32_jump_array_kernel(mtgp32_kernel_status_t * d_status,
-					 uint32_t jump_table[][MTGP32_N + 1],
+					 uint32_t jump_table[][MTGP32_N],
 					 uint32_t * seed_array,
 					 int length)
 {

@@ -54,8 +54,8 @@ static bool thread_max = false;
 /* small size for check */
 static const int jump_step = MTGP64_LS * 10;
 static ZZ jump;
-static uint32_t jump_poly[MTGP64_N];
-static uint32_t jump_initial[MTGP64_N * MAX_JUMP_TABLE];
+static uint32_t jump_poly[2 * MTGP64_N];
+static uint32_t jump_initial[2 * MTGP64_N * MAX_JUMP_TABLE];
 
 
 /* =========================
@@ -138,7 +138,13 @@ static int test(int argc, char * argv[]) {
 #else
     source = getSource("mtgp64-jump.cl");
 #endif
-    program = getProgram();
+    const char * compile_option = "";
+    bool double_extension = false;
+    if (hasDoubleExtension()) {
+	double_extension = true;
+	compile_option = "-DHAVE_DOUBLE";
+    }
+    program = getProgram(compile_option);
     queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
@@ -196,10 +202,6 @@ static int test(int argc, char * argv[]) {
 			seed_array, 5);
     data_count = opt.data_count;
 
-    bool double_extension = false;
-    if (hasDoubleExtension()) {
-	double_extension = true;
-    }
     while (data_count > 0) {
 	generate_double12(opt.group_num, status_buffer, data_unit);
 	status_jump(status_buffer, opt.group_num);
@@ -240,15 +242,15 @@ static void make_jump_table(int group_num)
     step = jump_step;
     start = clock();
     for (int i = 0; i < MAX_JUMP_TABLE; i++) {
-	calc_jump(&jump_initial[i * MTGP64_N],
-		  MTGP64_N,
+	calc_jump(&jump_initial[i * 2 * MTGP64_N],
+		  2 * MTGP64_N,
 		  step,
 		  poly);
 	step *= 4;
     }
     step = jump_step;
     step *= group_num - 1;
-    calc_jump(jump_poly, MTGP64_N, step, poly);
+    calc_jump(jump_poly, 2 * MTGP64_N, step, poly);
     end = clock();
     time = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
     cout << "make jump table: " << dec << time << "ms" << endl;
@@ -257,8 +259,8 @@ static void make_jump_table(int group_num)
     cout << "jump_poly[0]:" << hex << jump_poly[0] << endl;
     cout << "jump_poly[1]:" << hex << jump_poly[1] << endl;
     cout << "jump_initial[0]:" << hex << jump_initial[0 * MTGP64_N] << endl;
-    cout << "jump_initial[1]:" << hex << jump_initial[1 * MTGP64_N] << endl;
-    cout << "jump_initial[2]:" << hex << jump_initial[2 * MTGP64_N] << endl;
+    cout << "jump_initial[1]:" << hex << jump_initial[1 * 2 * MTGP64_N] << endl;
+    cout << "jump_initial[2]:" << hex << jump_initial[2 * 2 * MTGP64_N] << endl;
 #endif
 #if defined(DEBUG)
     cout << "make_jump_table end" << endl;
@@ -284,11 +286,11 @@ static void initialize_by_seed(options& opt,
     // jump table
     Buffer jump_table_buffer(context,
 			     CL_MEM_READ_WRITE,
-			     MTGP64_N * MAX_JUMP_TABLE * sizeof(uint64_t));
+			     MTGP64_JTS * MAX_JUMP_TABLE * sizeof(uint32_t));
     queue.enqueueWriteBuffer(jump_table_buffer,
 			     CL_TRUE,
 			     0,
-			     MTGP64_N * MAX_JUMP_TABLE * sizeof(uint64_t),
+			     MTGP64_JTS * MAX_JUMP_TABLE * sizeof(uint32_t),
 			     jump_initial);
 
     Kernel init_kernel(program, "mtgp64_jump_seed_kernel");
@@ -361,11 +363,11 @@ static void initialize_by_array(options& opt,
     // jump table
     Buffer jump_table_buffer(context,
 			     CL_MEM_READ_WRITE,
-			     MTGP64_N * MAX_JUMP_TABLE * sizeof(uint64_t));
+			     MTGP64_JTS * MAX_JUMP_TABLE * sizeof(uint32_t));
     queue.enqueueWriteBuffer(jump_table_buffer,
 			     CL_TRUE,
 			     0,
-			     MTGP64_N * MAX_JUMP_TABLE * sizeof(uint64_t),
+			     MTGP64_JTS * MAX_JUMP_TABLE * sizeof(uint32_t),
 			     jump_initial);
 
     Buffer seed_array_buffer(context,
@@ -423,11 +425,11 @@ static void status_jump(Buffer& status_buffer, int group)
     // jump table
     Buffer jump_table_buffer(context,
 			     CL_MEM_READ_WRITE,
-			     MTGP64_N * sizeof(uint64_t));
+			     MTGP64_JTS * sizeof(uint32_t));
     queue.enqueueWriteBuffer(jump_table_buffer,
 			     CL_TRUE,
 			     0,
-			     MTGP64_N * sizeof(uint64_t),
+			     MTGP64_JTS * sizeof(uint32_t),
 			     jump_poly);
 
     Kernel init_kernel(program, "mtgp64_jump_kernel");
@@ -470,12 +472,16 @@ static void generate_uint64(int group_num,
 {
 #if defined(DEBUG)
     cout << "generate_uint64 start" << endl;
+    cout << "data_size:" << dec << data_size << endl;
 #endif
     int item_num = MTGP64_TN * group_num;
     int min_size = MTGP64_LS * group_num;
     if (data_size % min_size != 0) {
 	data_size = (data_size / min_size + 1) * min_size;
     }
+#if defined(DEBUG)
+    cout << "data_size:" << dec << data_size << endl;
+#endif
     Kernel uint_kernel(program, "mtgp64_uint64_kernel");
     Buffer output_buffer(context,
 			 CL_MEM_READ_WRITE,
@@ -675,6 +681,7 @@ static void check_data(uint64_t * h_data, int num_data)
 {
 #if defined(DEBUG)
     cout << "check_data start" << endl;
+    cout << "num_data:" << dec << num_data << endl;
 #endif
     bool error = false;
     bool disp_flg = true;

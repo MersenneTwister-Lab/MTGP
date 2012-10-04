@@ -13,6 +13,7 @@
 #define MTGP64_TN MTGP64_FLOOR_2P
 #define MTGP64_LS (MTGP64_TN * 3)
 #define MTGP64_TS 16
+#define MTGP64_JTS (2 * MTGP64_N)
 
 extern "C" {
 #include "mtgp64-fast.h"

@@ -37,6 +37,8 @@ std::string errorMessage;
 /* =========================
    declaration
    ========================= */
+extern const int mtgpdc_params_11213_num;
+
 static mtgp64_fast_t * mtgp64;
 static bool thread_max = false;
 struct buffers_t {
@@ -175,6 +177,21 @@ static int test(int argc, char * argv[])
     if (local_mem_size < sizeof(uint64_t) * MTGP64_N * 2) {
 	cout << "local memory size not sufficient:"
 	     << dec << local_mem_size << endl;
+	return -1;
+    }
+    int constant_mem_size = getConstantMemSize();
+#if defined(DEBUG)
+    cout << "device constant memsize:" << dec << constant_mem_size << endl;
+    cout << "needed:"
+	 << dec << sizeof(uint64_t) * MTGP64_TS * 3 * opt.group_num << endl;
+#endif
+    if (constant_mem_size < sizeof(uint64_t) * MTGP64_TS * 3 * opt.group_num) {
+	cout << "constant memory size not sufficient:"
+	     << dec << constant_mem_size << endl;
+	return -1;
+    }
+    if (opt.group_num > mtgpdc_params_11213_num) {
+	cout << "group num larger than that of paramer file." << endl;
 	return -1;
     }
     Buffer status_buffer(context,

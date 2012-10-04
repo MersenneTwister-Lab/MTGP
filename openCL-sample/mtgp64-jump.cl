@@ -17,6 +17,7 @@
 #define MTGP64_TN MTGP64_FLOOR_2P
 #define MTGP64_LS (MTGP64_TN * 3)
 #define MTGP64_TS 16
+#define MTGP64_JTS (2 * MTGP64_N)
 
 __constant int mtgp64_pos = 45;
 __constant uint mtgp64_sh1 = 11;
@@ -691,7 +692,7 @@ static inline void mtgp64_jump(int gid,
     barrier(CLK_LOCAL_MEM_FENCE);
 
     // jump
-    for (i = 0; i < MTGP64_N; i++) {
+    for (i = 0; i < MTGP64_JTS; i++) {
 	bits = jump_poly[i];
 	for (j = 0; j < 32; j++) {
 	    if ((bits & 1) != 0) {
@@ -749,7 +750,7 @@ static inline void mtgp64_table_jump(int gid,
 	if ((gid & mask) != 0) {
 	    if (i % 2 == 0) {
 		mtgp64_jump(gid, lid, work, status,
-			    &jump_table[idx * MTGP64_N]);
+			    &jump_table[idx * MTGP64_JTS]);
 		barrier(CLK_LOCAL_MEM_FENCE);
 		status[lid] = work[lid];
 		if ((local_size < MTGP64_N) && (lid < MTGP64_N - MTGP64_TN)) {
@@ -758,10 +759,10 @@ static inline void mtgp64_table_jump(int gid,
 		barrier(CLK_LOCAL_MEM_FENCE);
 	    } else {
 		mtgp64_jump(gid, lid, work, status,
-			    &jump_table[idx * MTGP64_N]);
+			    &jump_table[idx * MTGP64_JTS]);
 		barrier(CLK_LOCAL_MEM_FENCE);
 		mtgp64_jump(gid, lid, status, work,
-			    &jump_table[idx * MTGP64_N]);
+			    &jump_table[idx * MTGP64_JTS]);
 		barrier(CLK_LOCAL_MEM_FENCE);
 	    }
 	}

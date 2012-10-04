@@ -35,8 +35,7 @@ cl::Program::Sources source;
 cl::CommandQueue queue;
 std::string errorMessage;
 
-#define MAX_GROUP_NUM 20
-static mtgp64_fast_t mtgp64[MAX_GROUP_NUM];
+static mtgp64_fast_t * mtgp64;
 static bool thread_max = false;
 
 /* =========================
@@ -128,7 +127,13 @@ static int test(int argc, char * argv[])
 #else
     source = getSource("mtgp64-jump.cl");
 #endif
-    program = getProgram();
+    const char * compile_option = "";
+    bool double_extension = false;
+    if (hasDoubleExtension()) {
+	double_extension = true;
+	compile_option = "-DHAVE_DOUBLE";
+    }
+    program = getProgram(compile_option);
     queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
@@ -163,6 +168,7 @@ static int test(int argc, char * argv[])
 
     // initialize by seed
     // generate uint64_t
+    mtgp64 = new mtgp64_fast_t[opt.group_num];
     init_check_data(mtgp64, opt.group_num, 1234);
     initialize_by_seed(status_buffer, opt.group_num, 1234);
     for (int i = 0; i < 2; i++) {
@@ -176,7 +182,7 @@ static int test(int argc, char * argv[])
     init_check_data_array(mtgp64, opt.group_num, seed_array, 5);
     initialize_by_array(status_buffer, opt.group_num,
 			seed_array, 5);
-    if (hasDoubleExtension()) {
+    if (double_extension) {
 	for (int i = 0; i < 1; i++) {
 	    generate_double12(opt.group_num, status_buffer, opt.data_count);
 	    generate_double01(opt.group_num, status_buffer, opt.data_count);
@@ -187,6 +193,7 @@ static int test(int argc, char * argv[])
 	}
     }
     free_check_data(mtgp64, opt.group_num);
+    delete[] mtgp64;
     return 0;
 }
 
@@ -206,13 +213,14 @@ static void initialize_by_seed(Buffer& status_buffer,
     cout << "initialize_by_seed start" << endl;
 #endif
     // jump table
+    cl_ulong size = MTGP64_JTS * MTGP64_JMP_TBL_SIZE * sizeof(uint32_t);
     Buffer jump_table_buffer(context,
 			     CL_MEM_READ_WRITE,
-			     MTGP64_N * 6 * sizeof(uint64_t));
+			     size);
     queue.enqueueWriteBuffer(jump_table_buffer,
 			     CL_TRUE,
 			     0,
-			     MTGP64_N * 6 * sizeof(uint64_t),
+			     size,
 			     mtgp64_jump_table);
 
     Kernel init_kernel(program, "mtgp64_jump_seed_kernel");
@@ -281,13 +289,14 @@ static void initialize_by_array(Buffer& status_buffer,
     cout << "initialize_by_array start" << endl;
 #endif
     // jump table
+    cl_ulong size = MTGP64_JTS * MTGP64_JMP_TBL_SIZE * sizeof(uint32_t);
     Buffer jump_table_buffer(context,
 			     CL_MEM_READ_WRITE,
-			     MTGP64_N * 6 * sizeof(uint64_t));
+			     size);
     queue.enqueueWriteBuffer(jump_table_buffer,
 			     CL_TRUE,
 			     0,
-			     MTGP64_N * 6 * sizeof(uint64_t),
+			     size,
 			     mtgp64_jump_table);
 
     Buffer seed_array_buffer(context,
@@ -501,11 +510,6 @@ static int init_check_data(mtgp64_fast_t mtgp64[],
 #if defined(DEBUG)
     cout << "init_check_data start" << endl;
 #endif
-    if (group_num > MAX_GROUP_NUM) {
-	cout << "can't check group number > " << dec << MAX_GROUP_NUM
-	     << group_num << endl;
-	return 1;
-    }
     for (int i = 0; i < group_num; i++) {
 	int rc = mtgp64_init(&mtgp64[i],
 			     &mtgp64dc_params_fast_11213[0],
@@ -513,12 +517,18 @@ static int init_check_data(mtgp64_fast_t mtgp64[],
 	if (rc) {
 	    return rc;
 	}
-	if (i == 0) {
-	    continue;
-	}
+#if defined(DEBUG)
+	cout << dec << i << ":";
+#endif
 	for (int j = 0; j < i; j++) {
+#if defined(DEBUG)
+	    cout << "+";
+#endif
 	    mtgp64_fast_jump(&mtgp64[i], mtgp64_jump_string);
 	}
+#if defined(DEBUG)
+	cout << endl;
+#endif
     }
 #if defined(DEBUG)
     cout << "init_check_data end" << endl;
@@ -534,11 +544,6 @@ static int init_check_data_array(mtgp64_fast_t mtgp64[],
 #if defined(DEBUG)
     cout << "init_check_data_array start" << endl;
 #endif
-    if (group_num > MAX_GROUP_NUM) {
-	cout << "can't check group number > " << dec << MAX_GROUP_NUM
-	     << group_num << endl;
-	return 1;
-    }
     for (int i = 0; i < group_num; i++) {
 	int rc = mtgp64_init_by_array(&mtgp64[i],
 				      &mtgp64dc_params_fast_11213[0],
@@ -581,11 +586,6 @@ static void check_data(uint64_t * h_data,
 #if defined(DEBUG)
     cout << "size = " << dec << size << endl;
 #endif
-    if (group_num > MAX_GROUP_NUM) {
-	cout << "can't check group number > " << dec << MAX_GROUP_NUM
-	     << " current:" << group_num << endl;
-	return;
-    }
     bool error = false;
     for (int i = 0; i < group_num; i++) {
 	bool disp_flg = true;
@@ -625,11 +625,6 @@ static void check_double12(double * h_data,
 #if defined(DEBUG)
     cout << "size = " << dec << size << endl;
 #endif
-    if (group_num > MAX_GROUP_NUM) {
-	cout << "can't check group number > " << dec << MAX_GROUP_NUM
-	     << " current:" << group_num << endl;
-	return;
-    }
     bool error = false;
     for (int i = 0; i < group_num; i++) {
 	bool disp_flg = true;
@@ -672,11 +667,6 @@ static void check_double01(double * h_data,
 #if defined(DEBUG)
     cout << "size = " << dec << size << endl;
 #endif
-    if (group_num > MAX_GROUP_NUM) {
-	cout << "can't check group number > " << dec << MAX_GROUP_NUM
-	     << " current:" << group_num << endl;
-	return;
-    }
     bool error = false;
     for (int i = 0; i < group_num; i++) {
 	bool disp_flg = true;
@@ -714,14 +704,16 @@ static void check_status(uint64_t * h_status,
 #if defined(DEBUG)
     cout << "check_status start" << endl;
 #endif
-    int counter = 0;
-    if (group_num > MAX_GROUP_NUM) {
-	cout << "can't check group number > " << dec << MAX_GROUP_NUM
-	     << " current:" << group_num << endl;
-	return;
-    }
+    bool error = false;
     int large_size = mtgp64[0].status->large_size;
+#if defined(DEBUG)
+    cout << "MTGP64_N:" << dec << MTGP64_N << endl;
+    cout << "large_size:" << dec << large_size << endl;
+#endif
+
     for (int i = 0; i < group_num; i++) {
+	int counter = 0;
+	bool disp = true;
 	for (int j = 0; j < MTGP64_N; j++) {
 	    int idx = mtgp64[i].status->idx - MTGP64_N + 1 + large_size;
 	    uint64_t x = h_status[i * MTGP64_N + j];
@@ -730,21 +722,24 @@ static void check_status(uint64_t * h_status,
 		x = x & mtgp64[i].params.mask;
 		r = r & mtgp64[i].params.mask;
 	    }
-	    if (x != r) {
+	    if (x != r && disp) {
 		cout << "mismatch i = " << dec << i
 		     << " j = " << dec << j
 		     << " device = " << hex << x
 		     << " host = " << hex << r << endl;
 		cout << "check_status check N.G!" << endl;
 		counter++;
+		error = true;
 	    }
 	    if (counter > 10) {
-		return;
+		disp = false;
 	    }
 	}
     }
-    if (counter == 0) {
+    if (!error) {
 	cout << "check_status check O.K!" << endl;
+    } else {
+	cout << "check_status check N.G!" << endl;
     }
 #if defined(DEBUG)
     cout << "check_status end" << endl;

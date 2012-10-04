@@ -1,4 +1,4 @@
-#DEBUG = -DDEBUG -ggdb
+DEBUG = -DDEBUG -ggdb
 
 # Linux
 #CC = g++ -O3 -I../ ${DEBUG} -lOpenCL
@@ -100,6 +100,7 @@ mtgp64-sample-jump2: mtgp64-sample-jump2.cpp \
 		opencl_tools.hpp \
 		mtgp64-jump.cl \
 		mtgp64-jump.cli \
+		mtgp64dc-param-11213.o \
 		../mtgp64-fast-jump.h \
 		../mtgp64-fast.h \
 		../mtgp64-calc-poly.hpp \
@@ -115,6 +116,9 @@ mtgp64-sample-jump2: mtgp64-sample-jump2.cpp \
 
 .c.o:
 	gcc -O3 -I../ -c -o $@ $<
+
+.cpp.o:
+	g++ -O3 -I../ -c -o $@ $<
 
 .cl.cli:
 	cpp $< $@
