@@ -339,7 +339,7 @@ static void initialize_by_array(buffers_t& mtgp_buffers,
 /**
  * generate 32 bit unsigned random numbers in device global memory
  *@param mtgp_buffers device global memories
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param data_size number of data to generate
  */
 static void generate_uint32(buffers_t& mtgp_buffers,
@@ -400,7 +400,7 @@ static void generate_uint32(buffers_t& mtgp_buffers,
  * generate single precision floating point numbers in the range [1, 2)
  * in device global memory
  *@param mtgp_buffers device global memories
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param data_size number of data to generate
  */
 static void generate_single12(buffers_t& mtgp_buffers,
@@ -452,7 +452,7 @@ static void generate_single12(buffers_t& mtgp_buffers,
  * generate single precision floating point numbers in the range [0, 1)
  * in device global memory
  *@param mtgp_buffers device global memories
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param data_size number of data to generate
  */
 static void generate_single01(buffers_t& mtgp_buffers,

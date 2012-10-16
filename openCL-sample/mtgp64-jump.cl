@@ -17,7 +17,7 @@
 #define MTGP64_TN MTGP64_FLOOR_2P
 #define MTGP64_LS (MTGP64_TN * 3)
 #define MTGP64_TS 16
-#define MTGP64_JTS (2 * MTGP64_N)
+#define MTGP64_JTS (MTGP64_MEXP / 32 + 1)
 
 __constant int mtgp64_pos = 45;
 __constant uint mtgp64_sh1 = 11;
@@ -160,6 +160,8 @@ __kernel void mtgp64_jump_kernel(__global ulong * d_status,
  * threads per block should be MTGP64_N.
  *
  * @param[in,out] d_status kernel I/O data
+ * @param[in] seed seed
+ * @param[in] jump_table
  */
 __kernel void mtgp64_jump_seed_kernel(__global ulong * d_status,
 				      ulong seed,
@@ -191,6 +193,9 @@ __kernel void mtgp64_jump_seed_kernel(__global ulong * d_status,
  * threads per block should be MTGP64_N.
  *
  * @param[in,out] d_status kernel I/O data
+ * @param[in] seed_array an array of seed
+ * @param[in] length max size of seed_array
+ * @param[in] jump_table jump table
  */
 __kernel void mtgp64_jump_array_kernel(__global ulong * d_status,
 				       __global ulong * seed_array,
@@ -525,6 +530,7 @@ static inline ulong mtgp64_ini_func2(ulong x)
 /**
  * This function initializes the internal state array with a 64-bit
  * integer seed.
+ * @param[out] status MTGP internal state
  * @param[in] seed a 64-bit integer used as the seed.
  */
 static inline void mtgp64_init_state(__local ulong * status,
@@ -563,10 +569,9 @@ static inline void mtgp64_init_state(__local ulong * status,
 
 /**
  * This function allocates and initializes the internal state array
- * with a 64-bit integer array. The allocated memory should be freed by
- * calling mtgp64_free(). \b para should be one of the elements in
- * the parameter table (mtgp64-param-ref.c).
+ * with a 64-bit integer array.
  *
+ * @param[out] status MTGP internal state
  * @param[in] seed_array a 64-bit integer array used as a seed.
  * @param[in] length length of the seed_array.
  */
@@ -669,7 +674,10 @@ static inline void mtgp64_init_by_array(__local ulong * status,
  * This function changes internal state of MTGP to jumped state.
  * threads per block should be MTGP64_N.
  *
- * @param[in,out] d_status kernel I/O data
+ * @param[in] gid group id
+ * @param[in] lid local id
+ * @param[out] work jumped state
+ * @param[in] status internal state of MTGP
  * @param[in] jump_poly jump polynomial
  */
 static inline void mtgp64_jump(int gid,
@@ -682,6 +690,7 @@ static inline void mtgp64_jump(int gid,
     ulong r;
     int pos = mtgp64_pos;
     uint bits;
+    uint count = MTGP64_MEXP;
     int i, j;
     const int local_size = get_local_size(0);
 
@@ -714,6 +723,10 @@ static inline void mtgp64_jump(int gid,
 	    barrier(CLK_LOCAL_MEM_FENCE);
 	    index = (index + 1) % MTGP64_N;
 	    bits = bits >> 1;
+	    count--;
+	    if (count == 0) {
+		break;
+	    }
 	}
     }
 }

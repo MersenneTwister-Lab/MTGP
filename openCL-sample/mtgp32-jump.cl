@@ -123,6 +123,8 @@ __kernel void mtgp32_jump_kernel(__global uint * d_status,
  * threads per block should be MTGP32_N.
  *
  * @param[in,out] d_status kernel I/O data
+ * @param[in] seed seed
+ * @param[in] jump_table jump table
  */
 __kernel void mtgp32_jump_seed_kernel(__global uint * d_status,
 				      uint seed,
@@ -153,7 +155,10 @@ __kernel void mtgp32_jump_seed_kernel(__global uint * d_status,
  * This function changes internal state of MTGP to jumped state.
  * threads per block should be MTGP32_N.
  *
- * @param[in,out] d_status kernel I/O data
+ * @param[out] d_status MTGP internal state
+ * @param[in] seed_array an array of seeds
+ * @param[in] length maz size of seed_array
+ * @param[in] jump_table jump table
  */
 __kernel void mtgp32_jump_array_kernel(__global uint * d_status,
 				       __global uint * seed_array,
@@ -450,7 +455,7 @@ static inline void status_write(__global uint * d_status,
 
 /**
  * This function represents a function used in the initialization
- * by mtgp32_init_by_array() and mtgp32_init_by_str().
+ * by mtgp32_init_by_array()
  * @param[in] x 32-bit integer
  * @return 32-bit integer
  */
@@ -461,7 +466,7 @@ static inline uint mtgp32_ini_func1(uint x)
 
 /**
  * This function represents a function used in the initialization
- * by mtgp32_init_by_array() and mtgp32_init_by_str().
+ * by mtgp32_init_by_array()
  * @param[in] x 32-bit integer
  * @return 32-bit integer
  */
@@ -473,6 +478,7 @@ static inline uint mtgp32_ini_func2(uint x)
 /**
  * This function initializes the internal state array with a 32-bit
  * integer seed.
+ * @param[out] status MTGP internal state
  * @param[in] seed a 32-bit integer used as the seed.
  */
 static inline void mtgp32_init_state(__local uint * status,
@@ -510,10 +516,9 @@ static inline void mtgp32_init_state(__local uint * status,
 
 /**
  * This function allocates and initializes the internal state array
- * with a 32-bit integer array. The allocated memory should be freed by
- * calling mtgp32_free(). \b para should be one of the elements in
- * the parameter table (mtgp32-param-ref.c).
+ * using a 32-bit integer array.
  *
+ * @param[out] status initialized MTGP internal state
  * @param[in] seed_array a 32-bit integer array used as a seed.
  * @param[in] length length of the seed_array.
  */
@@ -615,7 +620,10 @@ static inline void mtgp32_init_by_array(__local uint * status,
  * This function changes internal state of MTGP to jumped state.
  * threads per block should be MTGP32_N.
  *
- * @param[in,out] d_status kernel I/O data
+ * @param[in] gid group id
+ * @param[in] lid local id
+ * @param[out] work MTGP status (jumped)
+ * @param[in,out] status MTGP status (before, broken by this function)
  * @param[in] jump_poly jump polynomial
  */
 static inline void mtgp32_jump(int gid,
@@ -629,6 +637,7 @@ static inline void mtgp32_jump(int gid,
     int pos = mtgp32_pos;
     uint bits;
     int i, j;
+    int count = MTGP32_MEXP;
     const int local_size = get_local_size(0);
 
     work[lid] = 0;
@@ -660,6 +669,10 @@ static inline void mtgp32_jump(int gid,
 	    barrier(CLK_LOCAL_MEM_FENCE);
 	    index = (index + 1) % MTGP32_N;
 	    bits = bits >> 1;
+	    count--;
+	    if (count == 0) {
+		break;
+	    }
 	}
     }
 }

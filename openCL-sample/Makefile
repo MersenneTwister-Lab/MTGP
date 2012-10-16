@@ -1,12 +1,12 @@
-DEBUG = -DDEBUG -ggdb
+#DEBUG = -DDEBUG -ggdb
 
 # Linux
-#CC = g++ -O3 -I../ ${DEBUG} -lOpenCL
-# OSX 10.6
-CC = g++ -O3 -framework opencl -I../ ${DEBUG}
+CC = g++ -O3 -I../ ${DEBUG} -lOpenCL
+# OSX 10.7.5
+#CC = g++ -O3 -framework opencl -I../ ${DEBUG}
 
 # uncomment next line if you installed NTL with gf2x
-LIBGF2X = -lgf2x
+#LIBGF2X = -lgf2x
 # uncomment next line if you installed NTL with gmp
 #LIBGMP = -lgmp
 LINKOPT = -lntl ${LIBGF2X} ${LIBGMP}
@@ -88,7 +88,8 @@ mtgp64-sample-jump1: mtgp64-sample-jump1.cpp \
 		../mtgp64-fast.h \
 		parse_opt.o \
 		mtgp64dc-param-11213.o \
-		mtgp64-jump-table.o
+		mtgp64-jump-table.o \
+		../mtgp64-fast-jump.o
 	${CC} -o $@ mtgp64-sample-jump1.cpp \
 		parse_opt.o \
 		mtgp64-jump-table.o \
@@ -115,10 +116,10 @@ mtgp64-sample-jump2: mtgp64-sample-jump2.cpp \
 		${LINKOPT}
 
 .c.o:
-	gcc -O3 -I../ -c -o $@ $<
+	gcc -O3 -std=c99 ${DEBUG} -I../ -c -o $@ $<
 
 .cpp.o:
-	g++ -O3 -I../ -c -o $@ $<
+	g++ -O3 ${DEBUG} -I../ -c -o $@ $<
 
 .cl.cli:
 	cpp $< $@

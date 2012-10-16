@@ -16,15 +16,20 @@
  * Mersenne Prime Period: 2<sup>11213</sup>-1, 2<sup>23209</sup>-1 and
  * 2<sup>44497</sup>-1.
  *
+ * This project also provides jump function,
+ * see test-jump32.cpp, test-jump64.cpp and openCL-sample directory.
+ * We have some trouble to comple cuda with NTL in our environment,
+ * so we don't provide jump sample in cuda at this moment.
+ *
  * We expect MTGP is fast on Graphic Processors.
- * see mtgp32-cuda.cu and mtgp64-cuda.cu sample files.
+ * see cuda-sample and openCL-sample directories.
  *
  * @author Mutsuo Saito (saito\@our-domain) Hiroshima University
  * @author Makoto Matsumoto (m-mat\@our-domain) The University of Tokyo
  *
  * Please change \b our-domain to \b math.sci.hiroshima-u.ac.jp
  *
- * @date 2011-6-6
+ * @date 2012-10-12
  *
  * Copyright (C) 2009, 2010, 2011 Mutsuo Saito, Makoto Matsumoto, Hiroshima
  * University and The University of Tokyo. All rights reserved.

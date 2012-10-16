@@ -1,9 +1,9 @@
 #ifndef MTGP64_CALC_POLY_HPP
 #define MTGP64_CALC_POLY_HPP
 /**
- * @file mtgp64_calc_poly.hpp
+ * @file mtgp64-calc-poly.hpp
  *
- * @brief functions for calculating jump polynomial.
+ * @brief header file for functions of calculating jump polynomial.
  *
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)

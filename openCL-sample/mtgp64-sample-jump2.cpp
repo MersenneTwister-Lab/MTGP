@@ -54,8 +54,8 @@ static bool thread_max = false;
 /* small size for check */
 static const int jump_step = MTGP64_LS * 10;
 static ZZ jump;
-static uint32_t jump_poly[2 * MTGP64_N];
-static uint32_t jump_initial[2 * MTGP64_N * MAX_JUMP_TABLE];
+static uint32_t jump_poly[MTGP64_JTS];
+static uint32_t jump_initial[MTGP64_JTS * MAX_JUMP_TABLE];
 
 
 /* =========================
@@ -77,10 +77,10 @@ static void generate_uint64(int group_num,
 			    Buffer& status_buffer,
 			    int data_size);
 static void generate_double12(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size);
 static void generate_double01(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size);
 static int init_check_data(mtgp64_fast_t * mtgp64,
 			   uint64_t seed);
@@ -242,15 +242,15 @@ static void make_jump_table(int group_num)
     step = jump_step;
     start = clock();
     for (int i = 0; i < MAX_JUMP_TABLE; i++) {
-	calc_jump(&jump_initial[i * 2 * MTGP64_N],
-		  2 * MTGP64_N,
+	calc_jump(&jump_initial[i * MTGP64_JTS],
+		  MTGP64_JTS,
 		  step,
 		  poly);
 	step *= 4;
     }
     step = jump_step;
     step *= group_num - 1;
-    calc_jump(jump_poly, 2 * MTGP64_N, step, poly);
+    calc_jump(jump_poly, MTGP64_JTS, step, poly);
     end = clock();
     time = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
     cout << "make jump table: " << dec << time << "ms" << endl;
@@ -258,9 +258,9 @@ static void make_jump_table(int group_num)
     cout << "step:" << dec << step << endl;
     cout << "jump_poly[0]:" << hex << jump_poly[0] << endl;
     cout << "jump_poly[1]:" << hex << jump_poly[1] << endl;
-    cout << "jump_initial[0]:" << hex << jump_initial[0 * MTGP64_N] << endl;
-    cout << "jump_initial[1]:" << hex << jump_initial[1 * 2 * MTGP64_N] << endl;
-    cout << "jump_initial[2]:" << hex << jump_initial[2 * 2 * MTGP64_N] << endl;
+    cout << "jump_initial[0]:" << hex << jump_initial[0 * MTGP64_JTS] << endl;
+    cout << "jump_initial[1]:" << hex << jump_initial[1 * MTGP64_JTS] << endl;
+    cout << "jump_initial[2]:" << hex << jump_initial[2 * MTGP64_JTS] << endl;
 #endif
 #if defined(DEBUG)
     cout << "make_jump_table end" << endl;
@@ -271,6 +271,7 @@ static void make_jump_table(int group_num)
  * initialize mtgp status in device global memory
  * using seed and fixed jump.
  * jump step is fixed to 3^162.
+ *@param opt command line option
  *@param status_buffer mtgp status in device global memory
  *@param group number of group
  *@param seed seed for initialization
@@ -346,6 +347,7 @@ static void initialize_by_seed(options& opt,
 /**
  * initialize mtgp status in device global memory
  * using an array of seeds and jump.
+ *@param opt command line option
  *@param status_buffer mtgp status in device global memory
  *@param group number of group
  *@param seed_array seeds for initialization
@@ -462,7 +464,7 @@ static void status_jump(Buffer& status_buffer, int group)
 
 /**
  * generate 64 bit unsigned random numbers in device global memory
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param status_buffer mtgp status in device global memory
  *@param data_size number of data to generate
  */
@@ -536,12 +538,12 @@ static void generate_uint64(int group_num,
 /**
  * generate double precision floating point numbers in the range [1, 2)
  * in device global memory
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param status_buffer mtgp status in device global memory
  *@param data_size number of data to generate
  */
 static void generate_double12(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size)
 {
     int item_num = MTGP64_TN * group_num;
@@ -553,7 +555,7 @@ static void generate_double12(int group_num,
     Buffer output_buffer(context,
 			 CL_MEM_READ_WRITE,
 			 data_size * sizeof(double));
-    double_kernel.setArg(0, tiny_buffer);
+    double_kernel.setArg(0, status_buffer);
     double_kernel.setArg(1, output_buffer);
     double_kernel.setArg(2, data_size / group_num);
     NDRange global(item_num);
@@ -582,12 +584,12 @@ static void generate_double12(int group_num,
 /**
  * generate double precision floating point numbers in the range [0, 1)
  * in device global memory
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param status_buffer mtgp status in device global memory
  *@param data_size number of data to generate
  */
 static void generate_double01(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size)
 {
     int item_num = MTGP64_TN * group_num;
@@ -599,7 +601,7 @@ static void generate_double01(int group_num,
     Buffer output_buffer(context,
 			 CL_MEM_READ_WRITE,
 			 data_size * sizeof(double));
-    double_kernel.setArg(0, tiny_buffer);
+    double_kernel.setArg(0, status_buffer);
     double_kernel.setArg(1, output_buffer);
     double_kernel.setArg(2, data_size / group_num);
     NDRange global(item_num);

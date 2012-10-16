@@ -38,6 +38,12 @@ static void print_state(mtgp32_fast_t * a, mtgp32_fast_t * b);
 static void print_sequence(mtgp32_fast_t * a, mtgp32_fast_t * b);
 static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic);
 
+/**
+ * test main
+ * @param[in] argc number of arguments.
+ * @param[in] argv an array of arguments.
+ * @return 0 if normal, others abnormal.
+ */
 int main(int argc, char * argv[]) {
     if (argc <= 3) {
 	printf("%s -s|-c mexp no.\n", argv[0]);
@@ -82,6 +88,11 @@ int main(int argc, char * argv[]) {
     return 0;
 }
 
+/**
+ * check speed
+ * @param[in] mtgp generator
+ * @param[in] characteristic characteristic polynomial
+ */
 static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic)
 {
     long step = 10000;
@@ -134,6 +145,12 @@ static void speed(mtgp32_fast_t * mtgp, GF2X& characteristic)
     }
 }
 
+/**
+ * equality check
+ * @param[in] a mtgp generator
+ * @param[in] b mtgp generator
+ * @return 0 if equal
+ */
 static int check(mtgp32_fast_t *a, mtgp32_fast_t *b)
 {
     int check = 0;
@@ -155,6 +172,11 @@ static int check(mtgp32_fast_t *a, mtgp32_fast_t *b)
     return check;
 }
 
+/**
+ * print internal state of two mtgp generators for checking by human eyes.
+ * @param[in] a mtgp generator
+ * @param[in] b mtgp generator
+ */
 static void print_state(mtgp32_fast_t *a, mtgp32_fast_t * b)
 {
   int large_size = a->status->large_size;
@@ -171,6 +193,11 @@ static void print_state(mtgp32_fast_t *a, mtgp32_fast_t * b)
     }
 }
 
+/**
+ * print output sequences of two mtgp generators for checking by human eyes.
+ * @param[in] a mtgp generator
+ * @param[in] b mtgp generator
+ */
 static void print_sequence(mtgp32_fast_t *a, mtgp32_fast_t * b)
 {
     for (int i = 0; i < 25; i++) {
@@ -183,6 +210,11 @@ static void print_sequence(mtgp32_fast_t *a, mtgp32_fast_t * b)
     }
 }
 
+/**
+ * sanity check
+ * @param[in] mtgp generator
+ * @param[in] characteristic characteristic polynomial
+ */
 static void test(mtgp32_fast_t * mtgp, GF2X& characteristic)
 {
     mtgp32_fast_t new_mtgp_z;

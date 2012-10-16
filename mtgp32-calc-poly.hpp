@@ -1,7 +1,7 @@
 #ifndef MTGP32_CALC_POLY_HPP
 #define MTGP32_CALC_POLY_HPP
 /**
- * @file mtgp32_calc_poly.hpp
+ * @file mtgp32-calc-poly.hpp
  *
  * @brief functions for calculating jump polynomial.
  *

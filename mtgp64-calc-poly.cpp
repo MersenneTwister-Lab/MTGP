@@ -27,6 +27,12 @@
 using namespace std;
 using namespace NTL;
 
+/**
+ * calculate the characteristic polynomial for given 64-bit MTGP.
+ * MinPolySeq is defined in NTL.
+ * @param[out] poly calculated characteristic polynomial.
+ * @param[in] mtgp64 generator
+ */
 void mtgp64_calc_characteristic(GF2X& poly, mtgp64_fast_t * mtgp64)
 {
     vec_GF2 seq;
@@ -38,6 +44,12 @@ void mtgp64_calc_characteristic(GF2X& poly, mtgp64_fast_t * mtgp64)
     MinPolySeq(poly, seq, mexp);
 }
 
+/**
+ * calculate the characteristic polynomial for given 64-bit MTGP.
+ * MinPolySeq is defined in NTL.
+ * @param[out] str calculated characteristic polynomial in string format.
+ * @param[in] mtgp64 generator
+ */
 void mtgp64_calc_characteristic(string& str, mtgp64_fast_t * mtgp64)
 {
     GF2X poly;
@@ -47,6 +59,12 @@ void mtgp64_calc_characteristic(string& str, mtgp64_fast_t * mtgp64)
 
 
 #if defined(MAIN)
+/**
+ * main function for executable.
+ * @param[in] argc number of arguments.
+ * @param[in] argv an array of arguments.
+ * @return 0 if normal, other abnormal.
+ */
 int main(int argc, char *argv[]) {
     int mexp;
     int no;

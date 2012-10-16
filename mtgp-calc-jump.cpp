@@ -3,6 +3,20 @@
  *
  * @brief calc jump function.
  *
+ * This program calculates jump polynomial from the specified jump steps
+ * and a characteristic polynomial calculated by mtgp32-calc-poly or
+ * mtgp64-calc-poly.
+ *
+ * This program need NTL to compile.
+ *
+ * usage:<br/>
+ * mtgp-calc-jump [-a] jump-step poly-file<br/>
+ *   -a       : output array format<br/>
+ *              without -a output will be in string format<br/>
+ *   jump-step: a number between zero and 2^{MTGP_MEXP}-1.<br/>
+ *              large decimal number is allowed.<br/>
+ *   poly-file: output of mtgp32-calc-poly or mtgp64-calc-poly<br/>
+ *
  * @author Mutsuo Saito (Hiroshima University)
  * @author Makoto Matsumoto (The University of Tokyo)
  *
@@ -18,6 +32,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <string.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <time.h>
@@ -31,6 +46,10 @@ using namespace std;
 
 static void read_file(GF2X& lcmpoly, long line_no, const string& file);
 
+/**
+ * show usage
+ * @param name program name
+ */
 static void usage(char * name) {
     cout << name << " [-a] jump-step poly-file" << endl;
     cout << "    -a       : output array format" << endl;
@@ -39,6 +58,13 @@ static void usage(char * name) {
     cout << "    poly-file: output of calc-poly"
 	 << "file" << endl;
 }
+
+/**
+ * main function
+ * @param argc number of arguments
+ * @param argv an array of arguments
+ * @return -1 if error, 0 if normal
+ */
 int main(int argc, char * argv[]) {
     if (argc <= 2) {
 	usage(argv[0]);
@@ -88,7 +114,14 @@ int main(int argc, char * argv[]) {
     return 0;
 }
 
-static void read_file(GF2X& lcmpoly, long line_no, const string& file)
+/**
+ * read characteristic polynomial from file.
+ * @param[out] characteristic characteristic polynomial
+ * @param[in] line_no number of line in file if the file contains
+ * multiple polynomials.
+ * @param[in] file file name of characteristic polynomial
+ */
+static void read_file(GF2X& characteristic, long line_no, const string& file)
 {
     ifstream ifs(file.c_str());
     string line;
@@ -101,5 +134,5 @@ static void read_file(GF2X& lcmpoly, long line_no, const string& file)
 	line = "";
 	getline(ifs,line);
     }
-    stringtopoly(lcmpoly, line);
+    stringtopoly(characteristic, line);
 }

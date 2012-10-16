@@ -19,6 +19,18 @@ FILES = LICENSE.txt \
 	mtgp32-fast.c \
 	mtgp32-param-ref.c \
 	mtgp32-param-fast.c \
+	mtgp64-fast-jump.h \
+	mtgp64-fast-jump.c \
+	mtgp32-fast-jump.h \
+	mtgp32-fast-jump.c \
+	mtgp-calc-jump.cpp \
+	mtgp-calc-jump.hpp \
+	mtgp64-calc-poly.hpp \
+	mtgp64-calc-poly.cpp \
+	mtgp32-calc-poly.hpp \
+	mtgp32-calc-poly.cpp \
+	test-jump32.cpp \
+	test-jump64.cpp \
 	Makefile \
 	html
 
@@ -27,10 +39,20 @@ CUDA_FILES = mtgp-util.cu mtgp32-cuda.cu mtgp64-cuda.cu \
 	mtgp32-cuda-minmem.cu mtgp32dc-param-11213.c mtgp64dc-param-11213.c \
 	mtgp32-cuda-tex.cu mtgp64-cuda-tex.cu Makefile readme.html
 
+OPENCL_FILES = Makefile characteristic.64.11213.txt \
+	mtgp32-jump-string.h mtgp32-jump-table.cpp mtgp32-jump-table.h \
+	mtgp32-jump.cl mtgp32-sample-common.h mtgp32-sample-jump1.cpp \
+	mtgp32-sample-jump2.cpp mtgp32-sample.cpp mtgp32.cl \
+	mtgp64-jump-string.h mtgp64-jump-table.cpp mtgp64-jump-table.h \
+	mtgp64-jump.cl mtgp64-sample-common.h mtgp64-sample-jump1.cpp \
+	mtgp64-sample-jump2.cpp mtgp64-sample.cpp mtgp64.cl \
+	mtgp64dc-param-11213.c opencl_tools.hpp parse_opt.cpp \
+	parse_opt.h readme.html
+
 TOOL_FILES = Makefile bigcrush-param.c  bigcrush.c check-poly.cpp \
 	check-poly32.sh check-poly64.sh  test32.c test64.c zero-count.c
 
-VERSION = 1.1
+VERSION = 1.1.1
 DIR = MTGP-src-${VERSION}
 
 doc:
@@ -43,6 +65,8 @@ tar.gz: $(FILES)
 	cp -r ${FILES} ${DIR}
 	mkdir ${DIR}/cuda-sample
 	(cd cuda-sample; cp ${CUDA_FILES} ../${DIR}/cuda-sample)
+	mkdir ${DIR}/openCL-sample
+	(cd openCL-sample; cp ${OPENCL_FILES} ../${DIR}/openCL-sample)
 	mkdir ${DIR}/tools
 	(cd tools; cp ${TOOL_FILES} ../${DIR}/tools)
 	tar czvf ${DIR}.tar.gz ${DIR}/*
@@ -55,10 +79,12 @@ zip: $(FILES)
 	cp -r ${FILES} ${DIR}
 	mkdir ${DIR}/cuda-sample
 	(cd cuda-sample; cp ${CUDA_FILES} ../${DIR}/cuda-sample)
+	mkdir ${DIR}/openCL-sample
+	(cd openCL-sample; cp ${OPENCL_FILES} ../${DIR}/openCL-sample)
 	mkdir ${DIR}/tools
 	(cd tools; cp ${TOOL_FILES} ../${DIR}/tools)
 	zip ${DIR}.zip ${DIR}/* ${DIR}/html/* ${DIR}/tools/* \
-		${DIR}/cuda-sample/*
+		${DIR}/cuda-sample/* ${DIR}/openCL-sample/*
 	rm -rf ${DIR}
 
 clean:

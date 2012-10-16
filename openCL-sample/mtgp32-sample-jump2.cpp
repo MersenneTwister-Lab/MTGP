@@ -77,10 +77,10 @@ static void generate_uint32(int group_num,
 			    Buffer& status_buffer,
 			    int data_size);
 static void generate_single12(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size);
 static void generate_single01(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size);
 static int init_check_data(mtgp32_fast_t * mtgp32,
 			   uint32_t seed);
@@ -264,6 +264,7 @@ static void make_jump_table(int group_num)
  * initialize mtgp status in device global memory
  * using seed and fixed jump.
  * jump step is fixed to 3^162.
+ *@param opt command line option
  *@param status_buffer mtgp status in device global memory
  *@param group number of group
  *@param seed seed for initialization
@@ -339,6 +340,7 @@ static void initialize_by_seed(options& opt,
 /**
  * initialize mtgp status in device global memory
  * using an array of seeds and jump.
+ *@param opt command line option
  *@param status_buffer mtgp status in device global memory
  *@param group number of group
  *@param seed_array seeds for initialization
@@ -455,7 +457,7 @@ static void status_jump(Buffer& status_buffer, int group)
 
 /**
  * generate 32 bit unsigned random numbers in device global memory
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param status_buffer mtgp status in device global memory
  *@param data_size number of data to generate
  */
@@ -525,12 +527,12 @@ static void generate_uint32(int group_num,
 /**
  * generate single precision floating point numbers in the range [1, 2)
  * in device global memory
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param status_buffer mtgp status in device global memory
  *@param data_size number of data to generate
  */
 static void generate_single12(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size)
 {
     int item_num = MTGP32_TN * group_num;
@@ -542,7 +544,7 @@ static void generate_single12(int group_num,
     Buffer output_buffer(context,
 			 CL_MEM_READ_WRITE,
 			 data_size * sizeof(float));
-    single_kernel.setArg(0, tiny_buffer);
+    single_kernel.setArg(0, status_buffer);
     single_kernel.setArg(1, output_buffer);
     single_kernel.setArg(2, data_size / group_num);
     NDRange global(item_num);
@@ -571,12 +573,12 @@ static void generate_single12(int group_num,
 /**
  * generate single precision floating point numbers in the range [0, 1)
  * in device global memory
- *@group_num number of groups for execution
+ *@param group_num number of groups for execution
  *@param status_buffer mtgp status in device global memory
  *@param data_size number of data to generate
  */
 static void generate_single01(int group_num,
-			      Buffer& tiny_buffer,
+			      Buffer& status_buffer,
 			      int data_size)
 {
     int item_num = MTGP32_TN * group_num;
@@ -588,7 +590,7 @@ static void generate_single01(int group_num,
     Buffer output_buffer(context,
 			 CL_MEM_READ_WRITE,
 			 data_size * sizeof(float));
-    single_kernel.setArg(0, tiny_buffer);
+    single_kernel.setArg(0, status_buffer);
     single_kernel.setArg(1, output_buffer);
     single_kernel.setArg(2, data_size / group_num);
     NDRange global(item_num);
