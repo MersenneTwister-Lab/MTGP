@@ -150,7 +150,13 @@ static int test(int argc, char * argv[])
 #else
     source = getSource("mtgp64.cl");
 #endif
-    program = getProgram();
+    const char * compile_option = "";
+    bool double_extension = false;
+    if (hasDoubleExtension()) {
+	double_extension = true;
+	compile_option = "-DHAVE_DOUBLE";
+    }
+    program = getProgram(compile_option);
     queue = getCommandQueue();
 #if defined(DEBUG)
     cout << "openCL setup end" << endl;
@@ -223,7 +229,7 @@ static int test(int argc, char * argv[])
     init_check_data_array(mtgp64, opt.group_num, seed_array, 5);
     initialize_by_array(mtgp_buffers, opt.group_num,
 			seed_array, 5);
-    if (hasDoubleExtension()) {
+    if (double_extension) {
 	for (int i = 0; i < 1; i++) {
 	    generate_double12(mtgp_buffers, opt.group_num, opt.data_count);
 	    generate_double01(mtgp_buffers, opt.group_num, opt.data_count);

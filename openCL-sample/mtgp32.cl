@@ -98,6 +98,7 @@ __kernel void mtgp32_init_seed_kernel(
     if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
 	d_status[gid * MTGP32_N + MTGP32_TN + lid] = status[MTGP32_TN + lid];
     }
+    barrier(CLK_GLOBAL_MEM_FENCE);
 }
 
 /**
@@ -146,6 +147,7 @@ __kernel void mtgp32_init_array_kernel(
     if ((local_size < MTGP32_N) && (lid < MTGP32_N - MTGP32_TN)) {
 	d_status[gid * MTGP32_N + MTGP32_TN + lid] = status[MTGP32_TN + lid];
     }
+    barrier(CLK_GLOBAL_MEM_FENCE);
 }
 
 /**
@@ -555,6 +557,7 @@ static inline void mtgp32_init_state(mtgp32_t * mtgp, uint seed)
 	status[MTGP32_TN + lid] = tmp;
     }
     barrier(CLK_LOCAL_MEM_FENCE);
+    mem_fence(CLK_LOCAL_MEM_FENCE);
 
     if (lid == 0) {
 	status[0] = seed;
@@ -617,6 +620,7 @@ static inline void mtgp32_init_by_array(mtgp32_t * mtgp,
 	status[MTGP32_TN + lid] = tmp;
     }
     barrier(CLK_LOCAL_MEM_FENCE);
+    mem_fence(CLK_LOCAL_MEM_FENCE);
     if (lid != 0) {
 	return;
     }

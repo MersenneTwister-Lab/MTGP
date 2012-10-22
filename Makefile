@@ -17,7 +17,7 @@
 
 #DEBUG = -DDEBUG -ggdb -O0
 # uncomment next line if you installed NTL with gf2x
-#LIBGF2X = -lgf2x
+LIBGF2X = -lgf2x
 # uncomment next line if you installed NTL with gmp
 #LIBGMP = -lgmp
 

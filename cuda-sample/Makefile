@@ -1,88 +1,66 @@
 # Makefile
 
-#DEBUG = -DDEBUG -g -O0
+DEBUG = -DDEBUG -g -O0
 
 #ARCH = -arch=compute_11
 #ARCH = -arch=compute_13
 #VERB = -Xptxas=-v
 #ABI = -m32
+ABI = -m64
 
-NVCC = nvcc ${DEBUG} ${ARCH} -D__STDC_FORMAT_MACROS -I../ \
-	-D__STDC_CONSTANT_MACROS ${VERB} --compiler-options -std=c99
-GPP = g++ ${DEBUG} ${ABI} -D__STDC_FORMAT_MACROS -I../ \
-	-D__STDC_CONSTANT_MACROS
+NVCC =nvcc ${ABI} ${DEBUG} ${ARCH} -D__STDC_FORMAT_MACROS -I../ \
+	 -D__STDC_CONSTANT_MACROS ${VERB}
+CC = g++ -Wall ${ABI} ${DEBUG}  -D__STDC_FORMAT_MACROS -I../ \
+	 -D__STDC_CONSTANT_MACROS
 
-MTGP32_INC = ../mtgp32-fast.h ../mtgp32-fast.c mtgp-util.cuh mtgp-util.cu
-MTGP64_INC = ../mtgp64-fast.h ../mtgp64-fast.c mtgp-util.cuh mtgp-util.cu
-MTGP32_SRC = ../mtgp32-fast.c mtgp-util.cu
-MTGP64_SRC = ../mtgp64-fast.c mtgp-util.cu
-CUDALINK = -lcuda
+CUDALINK = -lcuda -lcudart
 
-.SUFFIXES:	.cu .cubin .ptx .bin
+#.SUFFIXES:	.cu .cubin .ptx .bin
 
-samples:sample32-cuda sample32-cuda-tex sample32-cuda-minmem \
-	sample32-cuda23209-tex sample64-cuda sample64-cuda-tex
+samples:sample32-cuda \
+	sample64-cuda
 
-sample32-cuda: mtgp32-cuda.cu ${MTGP32_INC} mtgp32dc-param-11213.c
-	${NVCC} -o $@ mtgp32-cuda.cu mtgp32dc-param-11213.c \
-	${MTGP32_SRC} ${CUDALINK}
+sample32-cuda: sample.cpp \
+	mtgp32-cuda.o \
+	mtgp32dc-param-11213.o \
+	mtgp32-fast.o \
+	mtgp-print.o
+	${CC} -o $@ sample.cpp \
+	mtgp32-cuda.o \
+	mtgp32dc-param-11213.o \
+	mtgp32-fast.o \
+	mtgp-print.o \
+	${CUDALINK}
 
-sample32-cuda-tex: mtgp32-cuda-tex.cu ${MTGP32_INC} mtgp32dc-param-11213.c
-	${NVCC} -o $@ mtgp32-cuda-tex.cu mtgp32dc-param-11213.c \
-	${MTGP32_SRC} ${CUDALINK}
+mtgp32-cuda.o: mtgp32-cuda.cu mtgp-util.cuh
+	${NVCC} -o $@ -c mtgp32-cuda.cu
 
-sample32-cuda-minmem: mtgp32-cuda-minmem.cu ${MTGP32_INC} \
-	mtgp32dc-param-11213.c
-	${NVCC} -o $@ mtgp32-cuda-minmem.cu mtgp32dc-param-11213.c \
-	${MTGP32_SRC} ${CUDALINK}
+sample64-cuda: sample.cpp \
+	mtgp64-cuda.o \
+	mtgp64dc-param-11213.o \
+	mtgp64-fast.o \
+	mtgp-print.o
+	${CC} -o $@ sample.cpp \
+	mtgp64-cuda.o \
+	mtgp64dc-param-11213.o \
+	mtgp64-fast.o \
+	mtgp-print.o \
+	${CUDALINK}
 
-sample32-cuda23209-tex: mtgp32-cuda23209-tex.cu ${MTGP32_INC} \
-	../mtgp32-param-fast.c
-	${NVCC} -o $@ mtgp32-cuda23209-tex.cu ../mtgp32-param-fast.c \
-	${MTGP32_SRC} ${CUDALINK}
+mtgp64-cuda.o: mtgp64-cuda.cu mtgp-util.cuh
+	${NVCC} -o $@ -c mtgp64-cuda.cu
 
-sample32-jump1: mtgp32-sample-jump1-host.cu mtgp32-jump-kernel.cuh \
-	../mtgp32-param-fast.c
-	${NVCC} -DCHECK -o $@ mtgp32-sample-jump1-host.cu \
-	../mtgp32-param-fast.c ../mtgp32-fast-jump.c \
-	${MTGP32_SRC} ${CUDALINK}
+mtgp32-fast.o:
+	${CC} -c -o mtgp32-fast.o ../mtgp32-fast.c
 
-sample32-jump2: mtgp32-sample-jump2-host.cu mtgp32-jump-kernel.cuh \
-	../mtgp32-param-fast.c ../mtgp32-calc-poly.o ../mtgp-calc-jump.o
-	${NVCC} -DCHECK -o $@ mtgp32-sample-jump2-host.cu mtgp32-quick-fix.o \
-	../mtgp32-param-fast.c ../mtgp32-fast-jump.c ../mtgp32-calc-poly.o \
-	../mtgp-calc-jump.o mtgp32-quick-fix.o ${MTGP32_SRC} ${CUDALINK}
+mtgp64-fast.o:
+	${CC} -c -o mtgp64-fast.o ../mtgp64-fast.c
 
-sample32-jump1-array: mtgp32-sample-jump1-host.cu ../mtgp32-param-fast.c
-	${NVCC} -DCHECK -DJUMP_ARRAY -o $@ mtgp32-sample-jump1-host.cu \
-	../mtgp32-param-fast.c ../mtgp32-fast-jump.c \
-	${MTGP32_SRC} ${CUDALINK}
-
-sample64-cuda: mtgp64-cuda.cu ${MTGP64_INC} mtgp64dc-param-11213.c
-	${NVCC} -o $@ mtgp64-cuda.cu mtgp64dc-param-11213.c \
-	${MTGP64_SRC} ${CUDALINK}
-
-sample64-cuda-tex: mtgp64-cuda-tex.cu ${MTGP64_INC} mtgp64dc-param-11213.c
-	${NVCC} -o $@ mtgp64-cuda-tex.cu mtgp64dc-param-11213.c \
-	${MTGP64_SRC} ${CUDALINK}
-
-
-# This sample needs compute capability 1.3 or greater than 1.3
-sample64-cuda13-tex: mtgp64-cuda13-tex.cu ${MTGP64_INC} mtgp64dc-param-11213.c
-	${NVCC} -arch=compute_13 -o $@ mtgp64-cuda13-tex.cu \
-	mtgp64dc-param-11213.c ${MTGP64_SRC} ${CUDALINK}
-
-.cu.ptx:
-	${NVCC} -ptx $<
-
-.cu.cubin:
-	${NVCC} -cubin $<
-
-.cu.bin:
-	${NVCC} -o $@ $< ${CUDALINK}
+.c.o:
+	${CC} -c -o $@ $<
 
 .cpp.o:
-	${GPP} -c $<
+	${CC} -c -o $@ $<
 
 clean:
-	rm -f *.o *~ *.cubin *.ptx
+	rm -rf *.o *~ *.cubin *.ptx *.dSYM

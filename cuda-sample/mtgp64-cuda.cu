@@ -1,7 +1,7 @@
 /**
  * @file mtgp64-cuda.cu
  *
- * @brief Sample Program for CUDA 2.2
+ * @brief Sample Program for CUDA 5.0
  *
  * MTGP64-11213
  * This program generates 64-bit unsigned integers.
@@ -17,19 +17,22 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "sample-cuda.h"
 #include "mtgp-util.cuh"
+#include "mtgp-print.h"
 #include "mtgp64-fast.h"
 
+#define MTGPDC_MEXP 11213
 #define MTGPDC_N 176
 #define MTGPDC_FLOOR_2P 128
+#define MTGP64DC_PARAM_TABLE mtgp64dc_params_fast_11213
 #define MEXP 11213
-#define N MTGPDC_N
 #define THREAD_NUM MTGPDC_FLOOR_2P
 #define LARGE_SIZE (THREAD_NUM * 3)
 #define PARAM_NUM_MAX mtgpdc_params_11213_num
 #define BLOCK_NUM_MAX 200
 #define TBL_SIZE 16
-#define MTGP64DC_PARAM_TABLE mtgp64dc_params_fast_11213
+#define N MTGPDC_N
 
 extern const int mtgpdc_params_11213_num;
 extern mtgp64_params_fast_t mtgp64dc_params_fast_11213[];
@@ -39,19 +42,19 @@ extern mtgp64_params_fast_t mtgp64dc_params_fast_11213[];
  * This structure must be initialized before first use.
  */
 struct mtgp64_kernel_status_t {
-    uint64_t status[N];
+    uint64_t status[MTGPDC_N];
 };
 
 /*
  * Generator Parameters.
  */
-__constant__ uint32_t param_tbl[BLOCK_NUM_MAX][TBL_SIZE];
-__constant__ uint32_t temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
-__constant__ uint32_t double_temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
 __constant__ uint32_t pos_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t sh1_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t sh2_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t mask[2];
+__constant__ uint32_t param_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t double_temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
 
 /**
  * Shared memory
@@ -393,7 +396,7 @@ __global__ void mtgp64_double_kernel(mtgp64_kernel_status_t* d_status,
  * @param d_status output kernel I/O data.
  * @param params MTGP64 parameters. needed for the initialization.
  */
-void make_kernel_data64(mtgp64_kernel_status_t *d_status,
+__host__ void make_kernel_data64(mtgp64_kernel_status_t *d_status,
 			mtgp64_params_fast_t params[],
 			int block_num)
 {
@@ -424,7 +427,7 @@ void make_kernel_data64(mtgp64_kernel_status_t *d_status,
  * This function sets constants in device memory.
  * @param[in] params input, MTGP64 parameters.
  */
-void make_constant(const mtgp64_params_fast_t params[],
+__host__ void make_constant(const mtgp64_params_fast_t params[],
 		   int block_num) {
     const int size1 = sizeof(uint32_t) * block_num;
     const int size2 = sizeof(uint32_t) * block_num * TBL_SIZE;
@@ -473,7 +476,7 @@ void make_constant(const mtgp64_params_fast_t params[],
     ccudaMemcpyToSymbol(param_tbl, h_param_tbl, size2);
     ccudaMemcpyToSymbol(temper_tbl, h_temper_tbl, size2);
     ccudaMemcpyToSymbol(double_temper_tbl, h_double_temper_tbl, size2);
-    ccudaMemcpyToSymbol(&mask, &h_mask, sizeof(uint32_t) * 2);
+    ccudaMemcpyToSymbol(mask, &h_mask, sizeof(uint32_t) * 2);
     free(h_pos_tbl);
     free(h_sh1_tbl);
     free(h_sh2_tbl);
@@ -490,7 +493,7 @@ void make_constant(const mtgp64_params_fast_t params[],
  * @param[in] d_status kernel I/O data.
  * @param[in] num_data number of data to be generated.
  */
-void make_uint64_random(mtgp64_kernel_status_t* d_status,
+__host__ void make_uint64_random(mtgp64_kernel_status_t* d_status,
 			int num_data,
 			int block_num) {
     uint64_t* d_data;
@@ -553,7 +556,7 @@ void make_uint64_random(mtgp64_kernel_status_t* d_status,
  * @param[in] d_status kernel I/O data.
  * @param[in] num_data number of data to be generated.
  */
-void make_double_random(mtgp64_kernel_status_t* d_status,
+__host__ void make_double_random(mtgp64_kernel_status_t* d_status,
 			int num_data,
 			int block_num) {
     uint64_t* d_data;
@@ -609,7 +612,7 @@ void make_double_random(mtgp64_kernel_status_t* d_status,
     ccudaFree(d_data);
 }
 
-int main(int argc, char** argv)
+__host__ int sample_cuda(int argc, char** argv)
 {
     // LARGE_SIZE is a multiple of 16
     int num_data = 10000000;
@@ -678,4 +681,5 @@ int main(int argc, char** argv)
 
     //finalize
     ccudaFree(d_status);
+    return 0;
 }

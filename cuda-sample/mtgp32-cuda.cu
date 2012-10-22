@@ -17,7 +17,9 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "sample-cuda.h"
 #include "mtgp-util.cuh"
+#include "mtgp-print.h"
 #include "mtgp32-fast.h"
 
 #define MTGPDC_MEXP 11213
@@ -45,13 +47,13 @@ struct mtgp32_kernel_status_t {
 /*
  * Generator Parameters.
  */
-__constant__ unsigned int pos_tbl[BLOCK_NUM_MAX];
-__constant__ uint32_t param_tbl[BLOCK_NUM_MAX][TBL_SIZE];
-__constant__ uint32_t temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
-__constant__ uint32_t single_temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t pos_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t sh1_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t sh2_tbl[BLOCK_NUM_MAX];
 __constant__ uint32_t mask[1];
+__constant__ uint32_t param_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
+__constant__ uint32_t single_temper_tbl[BLOCK_NUM_MAX][TBL_SIZE];
 
 /**
  * Shared memory
@@ -299,9 +301,9 @@ __global__ void mtgp32_single_kernel(mtgp32_kernel_status_t* d_status,
  * @param d_status output kernel I/O data.
  * @param params MTGP32 parameters. needed for the initialization.
  */
-void make_kernel_data32(mtgp32_kernel_status_t * d_status,
-			mtgp32_params_fast_t params[],
-			int block_num)
+__host__ void make_kernel_data32(mtgp32_kernel_status_t * d_status,
+				 mtgp32_params_fast_t params[],
+				 int block_num)
 {
     int i;
     mtgp32_kernel_status_t* h_status
@@ -331,7 +333,7 @@ void make_kernel_data32(mtgp32_kernel_status_t * d_status,
  * This function sets constants in device memory.
  * @param[in] params input, MTGP32 parameters.
  */
-void make_constant(const mtgp32_params_fast_t params[],
+__host__ void make_constant(const mtgp32_params_fast_t params[],
     int block_num) {
     const int size1 = sizeof(uint32_t) * block_num;
     const int size2 = sizeof(uint32_t) * block_num * TBL_SIZE;
@@ -394,7 +396,7 @@ void make_constant(const mtgp32_params_fast_t params[],
  * @param[in] d_status kernel I/O data.
  * @param[in] num_data number of data to be generated.
  */
-void make_uint32_random(mtgp32_kernel_status_t* d_status,
+__host__ void make_uint32_random(mtgp32_kernel_status_t* d_status,
 			int num_data,
 			int block_num) {
     uint32_t* d_data;
@@ -459,7 +461,7 @@ void make_uint32_random(mtgp32_kernel_status_t* d_status,
  * @param[in] d_status kernel I/O data.
  * @param[in] num_data number of data to be generated.
  */
-void make_single_random(mtgp32_kernel_status_t* d_status,
+__host__ void make_single_random(mtgp32_kernel_status_t* d_status,
 			int num_data,
 			int block_num) {
     uint32_t* d_data;
@@ -515,7 +517,7 @@ void make_single_random(mtgp32_kernel_status_t* d_status,
     ccudaFree(d_data);
 }
 
-int main(int argc, char** argv)
+__host__ int sample_cuda(int argc, char** argv)
 {
     // LARGE_SIZE is a multiple of 16
     int num_data = 10000000;
@@ -578,4 +580,5 @@ int main(int argc, char** argv)
     make_single_random(d_status, num_data, block_num);
 
     ccudaFree(d_status);
+    return 0;
 }

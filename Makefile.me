@@ -34,25 +34,60 @@ FILES = LICENSE.txt \
 	Makefile \
 	html
 
-CUDA_FILES = mtgp-util.cu mtgp32-cuda.cu mtgp64-cuda.cu \
-	mtgp-util.cuh mtgp32-cuda23209-tex.cu mtgp64-cuda13-tex.cu \
-	mtgp32-cuda-minmem.cu mtgp32dc-param-11213.c mtgp64dc-param-11213.c \
-	mtgp32-cuda-tex.cu mtgp64-cuda-tex.cu Makefile readme.html
+CUDA_FILES = 	Makefile \
+	sample-cuda.h \
+	sample.cpp \
+	mtgp-print.h \
+	mtgp-print.cpp \
+	mtgp-util.cuh \
+	mtgp32-cuda.cu \
+	mtgp64-cuda.cu \
+	mtgp32dc-param-11213.c \
+	mtgp64dc-param-11213.c \
+	readme.html
+#	mtgp32-cuda23209-tex.cu \
+#	mtgp64-cuda13-tex.cu \
+#	mtgp32-cuda-minmem.cu \
+#	mtgp32-cuda-tex.cu \
+#	mtgp64-cuda-tex.cu \
 
-OPENCL_FILES = Makefile characteristic.64.11213.txt \
-	mtgp32-jump-string.h mtgp32-jump-table.cpp mtgp32-jump-table.h \
-	mtgp32-jump.cl mtgp32-sample-common.h mtgp32-sample-jump1.cpp \
-	mtgp32-sample-jump2.cpp mtgp32-sample.cpp mtgp32.cl \
-	mtgp64-jump-string.h mtgp64-jump-table.cpp mtgp64-jump-table.h \
-	mtgp64-jump.cl mtgp64-sample-common.h mtgp64-sample-jump1.cpp \
-	mtgp64-sample-jump2.cpp mtgp64-sample.cpp mtgp64.cl \
-	mtgp64dc-param-11213.c opencl_tools.hpp parse_opt.cpp \
-	parse_opt.h readme.html
+OPENCL_FILES = Makefile \
+	characteristic.64.11213.txt \
+	mtgp32-jump-string.h \
+	mtgp32-jump-table.cpp \
+	mtgp32-jump-table.h \
+	mtgp32-jump.cl \
+	mtgp32-sample-common.h \
+	mtgp32-sample-jump1.cpp \
+	mtgp32-sample-jump2.cpp \
+	mtgp32-sample.cpp \
+	mtgp32.cl \
+	mtgp64-jump-string.h \
+	mtgp64-jump-table.cpp \
+	mtgp64-jump-table.h \
+	mtgp64-jump.cl \
+	mtgp64-sample-common.h \
+	mtgp64-sample-jump1.cpp \
+	mtgp64-sample-jump2.cpp \
+	mtgp64-sample.cpp \
+	mtgp64.cl \
+	mtgp64dc-param-11213.c \
+	opencl_tools.hpp \
+	parse_opt.cpp \
+	parse_opt.h \
+	readme.html
 
-TOOL_FILES = Makefile bigcrush-param.c  bigcrush.c check-poly.cpp \
-	check-poly32.sh check-poly64.sh  test32.c test64.c zero-count.c
+TOOL_FILES = Makefile \
+	bigcrush-param.c  \
+	bigcrush.c \
+	check-poly.cpp \
+	check-poly32.sh \
+	check-poly64.sh  \
+	test32.c \
+	test64.c \
+	zero-count.c
 
-VERSION = 1.1.1
+VERSION = 1.1.2
 DIR = MTGP-src-${VERSION}
 
 doc:

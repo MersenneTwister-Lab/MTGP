@@ -314,7 +314,7 @@ __kernel void mtgp64_double12_kernel(
 }
 
 #if defined(HAVE_DOUBLE)
-#pragma OPENCL_EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 /**
  * This kernel function generates double precision floating point numbers
  * in the range [0, 1) in d_data.
