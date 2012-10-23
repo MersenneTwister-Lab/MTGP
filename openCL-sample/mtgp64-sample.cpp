@@ -742,7 +742,7 @@ static void check_status(uint64_t * h_status,
 		x = x & mask;
 		r = r & mask;
 	    }
-	    if (x != r && disp_flag) {
+	    if (x != r && disp_flg) {
 		cout << "mismatch i = " << dec << i
 		     << " j = " << dec << j
 		     << " device = " << hex << x
@@ -751,7 +751,7 @@ static void check_status(uint64_t * h_status,
 		counter++;
 	    }
 	    if (counter > 10) {
-		disp_flag = false;
+		disp_flg = false;
 	    }
 	}
     }
