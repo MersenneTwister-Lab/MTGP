@@ -594,6 +594,8 @@ static void check_data(uint32_t * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -636,6 +638,8 @@ static void check_data12(float * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -678,6 +682,8 @@ static void check_data01(float * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -701,6 +707,14 @@ static void check_status(uint * h_status,
 		x = x & mtgp32[i].params.mask;
 		r = r & mtgp32[i].params.mask;
 	    }
+#if defined(DEBUG)
+	    if (i == 0 && counter == 0) {
+		cout << "i = " << dec << i
+		     << " j = " << dec << j
+		     << " device = " << hex << x
+		     << " host = " << hex << r << endl;
+	    }
+#endif
 	    if (x != r) {
 		cout << "mismatch i = " << dec << i
 		     << " j = " << dec << j
@@ -716,6 +730,8 @@ static void check_status(uint * h_status,
     }
     if (counter == 0) {
 	cout << "check_status check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_status error!");
     }
 #if defined(DEBUG)
     cout << "check_status end" << endl;

@@ -1,3 +1,10 @@
+ver. 1.1.2
+-------
+files in cuda-sample can run on cuda 5.0.
+remove old files from cuda-sample.
+but cuda-sample does not have jump function.
+some change in openCL-sample.
+
 ver. 1.1.1
 -------
 add jump function.

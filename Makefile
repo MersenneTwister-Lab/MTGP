@@ -17,7 +17,7 @@
 
 #DEBUG = -DDEBUG -ggdb -O0
 # uncomment next line if you installed NTL with gf2x
-LIBGF2X = -lgf2x
+#LIBGF2X = -lgf2x
 # uncomment next line if you installed NTL with gmp
 #LIBGMP = -lgmp
 
@@ -28,7 +28,7 @@ OPTI = -O3
 STD = -std=c99
 CC = gcc
 CPP = g++
-CPPFLAGS = -Wall -Wextra -O3 -msse3 $(DEBUG)
+CPPFLAGS = -Wall -Wextra -O3 $(DEBUG)
 CCFLAGS = $(OPTI) $(WARN) $(STD) $(DEBUG)
 OBJS = mtgp32-fast.o mtgp64-fast.o mtgp32-param-fast.o mtgp64-param-fast.o \
 	mtgp-calc-jump.o mtgp64-fast-jump.o mtgp32-calc-poly.o \

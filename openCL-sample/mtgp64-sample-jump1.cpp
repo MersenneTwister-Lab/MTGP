@@ -610,6 +610,8 @@ static void check_data(uint64_t * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp64 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -652,6 +654,8 @@ static void check_double12(double * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp64 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -694,6 +698,8 @@ static void check_double01(double * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp64 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -742,6 +748,7 @@ static void check_status(uint64_t * h_status,
 	cout << "check_status check O.K!" << endl;
     } else {
 	cout << "check_status check N.G!" << endl;
+	throw cl::Error(-1, "mtgp64 check_status error!");
     }
 #if defined(DEBUG)
     cout << "check_status end" << endl;

@@ -330,7 +330,7 @@ __kernel void mtgp64_double12_kernel(__global ulong * d_status,
 }
 
 #if defined(HAVE_DOUBLE)
-#pragma OPENCL_EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 /**
  * kernel function.
  * This function generates double precision floating point numbers in d_data.
@@ -559,10 +559,11 @@ static inline void mtgp64_init_state(__local ulong * status,
 
     if (lid == 0) {
 	status[0] = seed;
-	status[1] = hidden_seed;
 	for (i = 1; i < MTGP64_N; i++) {
-	    status[i] ^= i + 6364136223846793005UL
-		* (status[i - 1] ^ (status[i - 1] >> 62));
+	    status[i] = hidden_seed
+		^ (i + 6364136223846793005UL
+		   * (status[i - 1] ^ (status[i - 1] >> 62)));
+	    hidden_seed = tmp;
 	}
     }
 }

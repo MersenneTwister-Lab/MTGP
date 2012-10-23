@@ -624,6 +624,8 @@ static void check_data(uint64_t * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp64 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -666,6 +668,8 @@ static void check_data12(double * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp64 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -708,6 +712,8 @@ static void check_data01(double * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp64 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -727,6 +733,7 @@ static void check_status(uint64_t * h_status,
     cout << "mask:" << hex << mask << endl;
 #endif
     for (int i = 0; i < group_num; i++) {
+	bool disp_flg = true;
 	for (int j = 0; j < MTGP64_N; j++) {
 	    int idx = mtgp64[i].status->idx - MTGP64_N + 1 + large_size;
 	    uint64_t x = h_status[i * MTGP64_N + j];
@@ -735,7 +742,7 @@ static void check_status(uint64_t * h_status,
 		x = x & mask;
 		r = r & mask;
 	    }
-	    if (x != r) {
+	    if (x != r && disp_flag) {
 		cout << "mismatch i = " << dec << i
 		     << " j = " << dec << j
 		     << " device = " << hex << x
@@ -744,12 +751,14 @@ static void check_status(uint64_t * h_status,
 		counter++;
 	    }
 	    if (counter > 10) {
-		return;
+		disp_flag = false;
 	    }
 	}
     }
     if (counter == 0) {
 	cout << "check_status check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp64 check_status error!");
     }
 #if defined(DEBUG)
     cout << "check_status end" << endl;

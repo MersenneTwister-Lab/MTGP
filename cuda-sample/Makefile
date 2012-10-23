@@ -1,6 +1,6 @@
 # Makefile
 
-DEBUG = -DDEBUG -g -O0
+#DEBUG = -DDEBUG -g -O0
 
 #ARCH = -arch=compute_11
 #ARCH = -arch=compute_13

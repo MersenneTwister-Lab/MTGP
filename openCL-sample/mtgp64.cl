@@ -575,10 +575,11 @@ static inline void mtgp64_init_state(mtgp64_t * mtgp, ulong seed)
 
     if (lid == 0) {
 	status[0] = seed;
-	status[1] = hidden_seed;
 	for (i = 1; i < MTGP64_N; i++) {
-	    status[i] ^= i + 6364136223846793005UL
-		* (status[i - 1] ^ (status[i - 1] >> 62));
+	    status[i] = hidden_seed
+		^ (i + 6364136223846793005UL
+		   * (status[i - 1] ^ (status[i - 1] >> 62)));
+	    hidden_seed = tmp;
 	}
     }
 }

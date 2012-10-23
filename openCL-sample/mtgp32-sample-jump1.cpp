@@ -603,6 +603,8 @@ static void check_data(uint32_t * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -650,6 +652,8 @@ static void check_float12(float * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -697,6 +701,8 @@ static void check_float01(float * h_data,
     }
     if (!error) {
 	cout << "check_data check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_data error!");
     }
 #if defined(DEBUG)
     cout << "check_data end" << endl;
@@ -740,6 +746,8 @@ static void check_status(uint * h_status,
     }
     if (counter == 0) {
 	cout << "check_status check O.K!" << endl;
+    } else {
+	throw cl::Error(-1, "mtgp32 check_status error!");
     }
 #if defined(DEBUG)
     cout << "check_status end" << endl;

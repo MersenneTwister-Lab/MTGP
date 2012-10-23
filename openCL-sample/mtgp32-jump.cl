@@ -506,10 +506,11 @@ static inline void mtgp32_init_state(__local uint * status,
 
     if (lid == 0) {
 	status[0] = seed;
-	status[1] = hidden_seed;
 	for (i = 1; i < MTGP32_N; i++) {
-	    status[i] ^= i + 1812433253U * (status[i - 1]
-					    ^ (status[i - 1] >> 30));
+	    status[i] = hidden_seed
+		^ (i + 1812433253U * (status[i - 1]
+				      ^ (status[i - 1] >> 30)));
+	    hidden_seed = tmp;
 	}
     }
 }

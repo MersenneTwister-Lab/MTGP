@@ -11,12 +11,13 @@
 using namespace std;
 
 bool parse_opt(options& opt, int argc, char **argv) {
-    int c;
+    errno = 0;
+    string pgm = argv[0];
     bool error = false;
+#if 0
+    int c;
     bool has_group = false;
     bool has_data = false;
-    string pgm = argv[0];
-    errno = 0;
     static struct option longopts[] = {
 	{"group-number", required_argument, NULL, 'g'},
 	{"data-cout", required_argument, NULL, 'd'},
@@ -59,12 +60,35 @@ bool parse_opt(options& opt, int argc, char **argv) {
     if (!has_group || !has_data) {
 	error = true;
     }
+#endif
+    if (argc <= 2) {
+	error = true;
+    }
+    do {
+	if (error) {
+	    break;
+	}
+	opt.group_num = strtol(argv[1], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "group num error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+	opt.data_count = strtol(argv[2], NULL, 10);
+	if (errno) {
+	    error = true;
+	    cerr << "data count error!" << endl;
+	    cerr << strerror(errno) << endl;
+	    break;
+	}
+    } while (0);
     if (error) {
 	cerr << pgm
-	     << " [-g group-num] [-d data-count]" << endl;
-	cerr << "--group-num,-g  group number of kernel call."
+	     << " group-num data-count" << endl;
+	cerr << "group-num  group number of kernel call."
 	     << endl;
-	cerr << "--data-count,-d count       generate random number count."
+	cerr << "data-count number of generate random numbers."
 	     << endl;
 	return false;
     }
