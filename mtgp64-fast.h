@@ -63,7 +63,7 @@ typedef struct MTGP64_PARAMS_FAST_T {
  * avoid slow operation of remainder (%).
  *
  * \b size is the minimum needed size to represent linear space of
- * two element filed as 64-bit array.
+ * two element field as 64-bit array.
  *
  * \b large_size is a minimum power of 2 which is larger than \b size.
  * \b array has this size.
